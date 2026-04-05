@@ -1,0 +1,101 @@
+import request from 'supertest';
+import app     from '../../src/app.js';
+import { User  } from '../../src/modules/users/user.model.js';
+
+// Helper : crée un user et retourne son token
+async function createUserAndLogin(email = 'test@test.com') {
+  await request(app).post('/api/auth/register').send({
+    firstName: 'Test', lastName: 'User', email, password: 'Test1234!',
+  });
+  const res = await request(app).post('/api/auth/login').send({ email, password: 'Test1234!' });
+  return { token: res.body.data.accessToken, userId: res.body.data.user.id };
+}
+
+describe('Groups API', () => {
+  let token, userId;
+
+  beforeEach(async () => {
+    ({ token, userId } = await createUserAndLogin());
+  });
+
+  describe('POST /api/groups', () => {
+    const validGroup = {
+      name: 'Tontine Famille',
+      type: 'tontine',
+      settings: { targetAmount: 50000, currency: 'XAF' },
+    };
+
+    it('crée un groupe et ajoute le créateur comme admin', async () => {
+      const res = await request(app)
+        .post('/api/groups')
+        .set('Authorization', `Bearer ${token}`)
+        .send(validGroup);
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.group.name).toBe('Tontine Famille');
+      expect(res.body.data.group.members).toHaveLength(1);
+      expect(res.body.data.group.members[0].role).toBe('admin');
+    });
+
+    it('retourne 401 sans token', async () => {
+      const res = await request(app).post('/api/groups').send(validGroup);
+      expect(res.status).toBe(401);
+    });
+
+    it('retourne 400 si settings.targetAmount manquant', async () => {
+      const res = await request(app)
+        .post('/api/groups')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'Test', type: 'tontine', settings: {} });
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('POST /api/groups/:groupId/members', () => {
+    it('ajoute un membre au groupe', async () => {
+      // 1. Créer le groupe
+      const groupRes = await request(app)
+        .post('/api/groups')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'G1', type: 'tontine', settings: { targetAmount: 10000, currency: 'XAF' } });
+
+      // 2. Créer un second user
+      await request(app).post('/api/auth/register').send({
+        firstName: 'Alice', lastName: 'B', email: 'alice@test.com', password: 'Test1234!',
+      });
+
+      // 3. Ajouter Alice au groupe
+      const res = await request(app)
+        .post(`/api/groups/${groupRes.body.data.group._id}/members`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'alice@test.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.group.members).toHaveLength(2);
+    });
+
+    it('retourne 409 si le membre est déjà dans le groupe', async () => {
+      const groupRes = await request(app)
+        .post('/api/groups')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'G1', type: 'tontine', settings: { targetAmount: 10000, currency: 'XAF' } });
+
+      await request(app).post('/api/auth/register')
+        .send({ firstName: 'B', lastName: 'B', email: 'bob@test.com', password: 'Test1234!' });
+
+      const groupId = groupRes.body.data.group._id;
+      await request(app)
+        .post(`/api/groups/${groupId}/members`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'bob@test.com' });
+
+      // Deuxième tentative
+      const res = await request(app)
+        .post(`/api/groups/${groupId}/members`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'bob@test.com' });
+
+      expect(res.status).toBe(409);
+    });
+  });
+});
