@@ -1,7 +1,7 @@
-import mongoose      from 'mongoose';
+import mongoose        from 'mongoose';
 import { Transaction } from './transaction.model.js';
 import { Contribution } from '../contributions/contribution.model.js';
-import { Group }       from '../groups/group.model.js';
+import { Group }        from '../groups/group.model.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../utils/ApiError.js';
 
 export const transactionService = {
@@ -34,8 +34,46 @@ export const transactionService = {
     };
   },
 
-  // Correction d'erreur : annulation + recréation
-  // Seul un admin peut corriger une transaction
+  // Transactions personnelles du user connecté
+  async getUserTransactions(userId, { page = 1, limit = 20, type, groupId } = {}) {
+    const query = { userId };
+    if (type)    query.type    = type;
+    if (groupId) query.groupId = groupId;
+
+    const [transactions, total] = await Promise.all([
+      Transaction.find(query)
+        .populate('groupId', 'name settings.currency')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Transaction.countDocuments(query),
+    ]);
+
+    return {
+      transactions,
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  },
+
+  // Détail d'une transaction unique avec vérification d'accès
+  async getById(transactionId, requestingUserId) {
+    const transaction = await Transaction.findById(transactionId)
+      .populate('userId',  'firstName lastName email')
+      .populate('groupId', 'name');
+
+    if (!transaction) throw new NotFoundError('Transaction');
+
+    // L'utilisateur doit être membre du groupe OU être l'auteur de la transaction
+    const group = await Group.findById(transaction.groupId);
+    const isMember  = group?.hasMember(requestingUserId);
+    const isAuthor  = transaction.userId._id.equals(requestingUserId);
+
+    if (!isMember && !isAuthor) throw new ForbiddenError('Accès refusé');
+
+    return transaction;
+  },
+
+  // Correction d'erreur
   async correctTransaction({ wrongTransactionId, adminId, correctedData }) {
     const wrong = await Transaction.findById(wrongTransactionId);
     if (!wrong) throw new NotFoundError('Transaction');
@@ -43,7 +81,6 @@ export const transactionService = {
     const group = await Group.findById(wrong.groupId);
     if (!group?.isAdmin(adminId)) throw new ForbiddenError('Action réservée à l\'admin');
 
-    // On ne peut corriger que les transactions récentes (ex : moins de 24h)
     const hoursSinceCreation = (Date.now() - wrong.createdAt) / 3600000;
     if (hoursSinceCreation > 24) {
       throw new ValidationError(
@@ -52,11 +89,9 @@ export const transactionService = {
     }
 
     const session = await mongoose.startSession();
-
     try {
       session.startTransaction();
 
-      // 1. Transaction d'annulation (montant négatif = crédit)
       const [refund] = await Transaction.create([{
         groupId:     wrong.groupId,
         userId:      wrong.userId,
@@ -64,10 +99,9 @@ export const transactionService = {
         amountCents: -wrong.amountCents,
         currency:    wrong.currency,
         referenceId: wrong._id,
-        description: `Annulation de la transaction ${wrong._id} — correction admin`,
+        description: `Annulation transaction ${wrong._id} — correction admin`,
       }], { session });
 
-      // 2. Nouvelle transaction correcte
       const [corrected] = await Transaction.create([{
         groupId:     wrong.groupId,
         userId:      correctedData.userId || wrong.userId,
@@ -78,12 +112,10 @@ export const transactionService = {
         description: `Correction de ${wrong._id} par admin`,
       }], { session });
 
-      // 3. Mettre à jour la Contribution liée pour refléter la correction
       if (wrong.referenceId && wrong.type === 'contribution') {
         await Contribution.findByIdAndUpdate(
           wrong.referenceId,
           {
-            // Retirer l'ancienne transaction, ajouter refund + corrected
             $pull: { transactionIds: wrong._id },
             $push: { transactionIds: { $each: [refund._id, corrected._id] } },
           },
