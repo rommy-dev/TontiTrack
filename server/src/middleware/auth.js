@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../modules/users/user.model.js';
-import { AuthError } from '../utils/ApiError.js';
+import { AuthError, NotFoundError, ForbiddenError } from '../utils/ApiError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { config } from '../config/env.js';
 
