@@ -1,4 +1,3 @@
-// src/modules/auth/auth.routes.js
 import { Router }       from 'express';
 import { authController } from './auth.controller.js';
 import { protect }        from '../../middleware/auth.js';
