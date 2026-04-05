@@ -59,16 +59,18 @@ describe('Groups API', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({ name: 'G1', type: 'tontine', settings: { targetAmount: 10000, currency: 'XAF' } });
 
+      const groupId = groupRes.body.data.group._id;
+
       // 2. Créer un second user
       await request(app).post('/api/auth/register').send({
-        firstName: 'Alice', lastName: 'B', email: 'alice@test.com', password: 'Test1234!',
+        firstName: 'Alice', lastName: 'Smith', email: 'alice@example.com', password: 'Password123!',
       });
 
       // 3. Ajouter Alice au groupe
       const res = await request(app)
-        .post(`/api/groups/${groupRes.body.data.group._id}/members`)
+        .post(`/api/groups/${groupId}/members`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ email: 'alice@test.com' });
+        .send({ email: 'alice@example.com' });
 
       expect(res.status).toBe(200);
       expect(res.body.data.group.members).toHaveLength(2);
@@ -81,19 +83,19 @@ describe('Groups API', () => {
         .send({ name: 'G1', type: 'tontine', settings: { targetAmount: 10000, currency: 'XAF' } });
 
       await request(app).post('/api/auth/register')
-        .send({ firstName: 'B', lastName: 'B', email: 'bob@test.com', password: 'Test1234!' });
+        .send({ firstName: 'Bob', lastName: 'Smith', email: 'bob@example.com', password: 'Password123!' });
 
       const groupId = groupRes.body.data.group._id;
       await request(app)
         .post(`/api/groups/${groupId}/members`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ email: 'bob@test.com' });
+        .send({ email: 'bob@example.com' });
 
       // Deuxième tentative
       const res = await request(app)
         .post(`/api/groups/${groupId}/members`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ email: 'bob@test.com' });
+        .send({ email: 'bob@example.com' });
 
       expect(res.status).toBe(409);
     });

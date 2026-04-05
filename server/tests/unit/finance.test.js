@@ -22,8 +22,9 @@ describe('deriveContributionStatus', () => {
   });
 
   it('retourne "late" si paiement partiel après la grace period', () => {
+    const pastDue = new Date(Date.now() - 86400000 * 5); // il y a 5 jours
     expect(deriveContributionStatus({
-      paidAmount: 3000, expectedAmount: 5000, dueDate, gracePeriodDays
+      paidAmount: 3000, expectedAmount: 5000, dueDate: pastDue, gracePeriodDays
     })).toBe('late');
   });
 

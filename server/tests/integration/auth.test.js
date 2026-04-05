@@ -1,4 +1,5 @@
 import request from 'supertest';
+import bcrypt from 'bcryptjs';
 import app from '../../src/app.js';
 import { User } from '../../src/modules/users/user.model.js';
 
@@ -10,7 +11,7 @@ describe('POST /api/auth/register', () => {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
-        password: 'password123',
+        password: 'Password123',
       });
     
     expect(res.status).toBe(201);
@@ -23,7 +24,7 @@ describe('POST /api/auth/register', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john.doe@example.com',
-      password: 'password123',
+      passwordHash: await bcrypt.hash('Password123', 10),
     });
     
     const res = await request(app)
@@ -32,7 +33,7 @@ describe('POST /api/auth/register', () => {
         firstName: 'John',
         lastName: 'Doe',
         email: 'john.doe@example.com',
-        password: 'password123',
+        password: 'Password123',
       });
     
     expect(res.status).toBe(409);
