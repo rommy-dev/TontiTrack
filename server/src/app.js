@@ -1,12 +1,12 @@
-// src/app.js  — VERSION FINALE
+// src/app.js  — VERSION FINALE (REFACTOR)
 import 'dotenv/config';
 import './config/env.js';
 import express              from 'express';
 import cors                 from 'cors';
 import helmet               from 'helmet';
 import morgan               from 'morgan';
-import cookieParser         from 'cookie-parser'; 
-import { connectDB, closeDB } from './config/db.js';
+import cookieParser         from 'cookie-parser';
+import mongoose             from 'mongoose';
 import { errorHandler }     from './middleware/errorHandler.js';
 import { apiRateLimiter, authRateLimiter } from './middleware/rateLimiter.js';
 
@@ -16,7 +16,6 @@ import groupRoutes        from './modules/groups/group.routes.js';
 import cycleRoutes        from './modules/cycles/cycle.routes.js';
 import contributionRoutes from './modules/contributions/contribution.routes.js';
 import transactionRoutes  from './modules/transactions/transaction.routes.js';
-import { startCronJobs }  from './jobs/cycleStatusJob.js';
 
 const app = express();
 
@@ -55,7 +54,7 @@ app.get('/health', (req, res) => {
     status:   'ok',
     env:      process.env.NODE_ENV,
     uptime:   Math.floor(process.uptime()),
-    mongodb:  require('mongoose').connection.readyState === 1 ? 'connected' : 'disconnected',
+    mongodb:  mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
 });
 
@@ -66,32 +65,5 @@ app.use((req, res) => {
 
 // ── Error handler — TOUJOURS EN DERNIER ──────────────────────────────────────
 app.use(errorHandler);
-
-// ── Démarrage ────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
-
-if (process.env.NODE_ENV !== 'test') {
-  connectDB().then(() => {
-    app.listen(PORT, () => {
-      console.log(`Serveur TontiTrack sur le port ${PORT} [${process.env.NODE_ENV}]`);
-      startCronJobs();  // démarre les jobs planifiés
-    });
-  });
-}
-
-// ── Fermeture propre (Ctrl+C, redéploiement Docker) ──────────────────────────
-const shutdown = async (signal) => {
-  console.log(`\nSignal ${signal} reçu — fermeture propre...`);
-  await closeDB();
-  process.exit(0);
-};
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT',  () => shutdown('SIGINT'));
-
-// Bugs non catchés — on log et on sort proprement
-process.on('unhandledRejection', (err) => {
-  console.error('unhandledRejection :', err);
-  shutdown('unhandledRejection');
-});
 
 export default app;
