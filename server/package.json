@@ -3,15 +3,19 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "test": "cross-env NODE_ENV=test jest --runInBand",
-    "test:watch": "jest --watch",
+    "test": "cross-env NODE_ENV=test jest --runInBand --forceExit",
+    "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
+    "test:unit":  "cross-env NODE_ENV=test jest tests/unit --runInBand",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write src/"
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFilesAfterFramework": [
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    },
+    "setupFilesAfterEnv": [
       "./tests/setup.js"
     ]
   },
@@ -24,6 +28,7 @@
     "express-rate-limit": "^8.3.2",
     "express-validator": "^7.3.2",
     "helmet": "^8.1.0",
+    "jest": "^30.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.4.1",
     "morgan": "^1.10.1",
@@ -31,6 +36,11 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "mongodb-memory-server": "^11.0.1"
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "babel-jest": "^30.3.0",
+    "cross-env": "^10.1.0",
+    "mongodb-memory-server": "^11.0.1",
+    "supertest": "^6.3.3"
   }
 }
