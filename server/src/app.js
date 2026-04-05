@@ -1,4 +1,3 @@
-// src/app.js  — VERSION FINALE (REFACTOR)
 import 'dotenv/config';
 import './config/env.js';
 import express              from 'express';
