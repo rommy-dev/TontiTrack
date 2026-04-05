@@ -1,6 +1,7 @@
 import { authService } from './auth.service.js';
 import { catchAsync } from '../../utils/catchAsync.js';
 import { config } from '../../config/env.js';
+import { AuthError } from '../../utils/ApiError.js';
 
 export const authController = {
 
