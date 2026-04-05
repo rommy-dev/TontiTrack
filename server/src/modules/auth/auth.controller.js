@@ -1,5 +1,6 @@
 import { authService } from './auth.service.js';
 import { catchAsync } from '../../utils/catchAsync.js';
+import { config } from '../../config/env.js';
 
 export const authController = {
 
@@ -10,7 +11,7 @@ export const authController = {
     // Refresh token en cookie httpOnly — inaccessible au JavaScript
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
-      secure:   process.env.NODE_ENV === 'production',
+      secure:   config.isProduction,
       sameSite: 'strict',
       maxAge:   7 * 24 * 60 * 60 * 1000,   // 7 jours en ms
     });
@@ -27,7 +28,7 @@ export const authController = {
 
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
-      secure:   process.env.NODE_ENV === 'production',
+      secure:   config.isProduction,
       sameSite: 'strict',
       maxAge:   7 * 24 * 60 * 60 * 1000,
     });

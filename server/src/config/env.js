@@ -21,4 +21,6 @@ export const config = {
   jwtAccessExpires:  process.env.JWT_ACCESS_EXPIRES,
   jwtRefreshExpires: process.env.JWT_REFRESH_EXPIRES,
   bcryptRounds:      parseInt(process.env.BCRYPT_ROUNDS) || 10,
+  isDevelopment:     (process.env.NODE_ENV || 'development') === 'development',
+  isProduction:      (process.env.NODE_ENV || 'development') === 'production',
 };

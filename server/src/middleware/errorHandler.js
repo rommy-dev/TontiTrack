@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { config } from '../config/env.js';
 
 export const errorHandler = (err, req, res, next) => {
   // 1. Normaliser en ApiError si ce n'en est pas une
@@ -45,13 +46,13 @@ export const errorHandler = (err, req, res, next) => {
   };
 
   // En développement : exposer les détails du bug
-  if (process.env.NODE_ENV === 'development') {
+  if (config.isDevelopment) {
     response.stack   = err.stack;
     response.details = error.details;
   }
 
   // En production : exposer seulement les détails de validation (safe)
-  if (process.env.NODE_ENV === 'production' && error.details?.length) {
+  if (config.isProduction && error.details?.length) {
     response.details = error.details;
   }
 
