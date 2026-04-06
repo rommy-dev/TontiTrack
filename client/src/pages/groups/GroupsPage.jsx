@@ -9,6 +9,7 @@ import Badge from '../../components/ui/Badge.jsx';
 import Spinner from '../../components/ui/Spinner.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import { formatCurrency } from '../../lib/utils.js';
+import { SkeletonGroupCard } from '../../components/ui/Skeleton.jsx';
 
 // ── Modal de création de groupe ───────────────────────────────────────────────
 function CreateGroupModal({ onClose }) {
@@ -183,8 +184,21 @@ export default function GroupsPage() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center py-32">
-                <Spinner size="lg" className="text-primary-500" />
+            <div className="space-y-6">
+                {/* Actions simulées */}
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 max-w-sm">
+                        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                </div>
+
+                {/* Grille de skeletons */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <SkeletonGroupCard key={i} />
+                    ))}
+                </div>
             </div>
         );
     }

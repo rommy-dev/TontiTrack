@@ -1,4 +1,3 @@
-// src/pages/contributions/ContributionsPage.jsx
 import { useState }        from 'react';
 import { CreditCard, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMyContributions }  from '../../hooks/useContributions.js';
@@ -10,6 +9,7 @@ import Spinner            from '../../components/ui/Spinner.jsx';
 import EmptyState         from '../../components/ui/EmptyState.jsx';
 import ProgressBar        from '../../components/ui/ProgressBar.jsx';
 import PaymentModal       from '../../components/features/PaymentModal.jsx';
+import { SkeletonContributionCard } from '../../components/ui/Skeleton.jsx';
 import { formatCurrency, formatDate } from '../../lib/utils.js';
 
 const STATUS_FILTERS = [
@@ -58,8 +58,10 @@ export default function ContributionsPage() {
 
       {/* Contenu */}
       {isLoading ? (
-        <div className="flex justify-center py-24">
-          <Spinner size="lg" className="text-primary-500" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonContributionCard key={i} />
+          ))}
         </div>
       ) : contributions.length === 0 ? (
         <EmptyState

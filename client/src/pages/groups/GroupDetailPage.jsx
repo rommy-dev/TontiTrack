@@ -13,6 +13,7 @@ import Spinner from '../../components/ui/Spinner.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import { CycleBadge, ContributionBadge } from '../../components/ui/Badge.jsx';
 import { formatCurrency, formatDate } from '../../lib/utils.js';
+import { SkeletonCycleCard, SkeletonMembersList, SkeletonContributionsList } from '../../components/ui/Skeleton.jsx';
 
 // ── Modal de création de cycle ───────────────────────────────────────────────
 function CreateCycleModal({ group, onClose }) {
@@ -121,6 +122,8 @@ function CreateCycleModal({ group, onClose }) {
 
 // ── Panneau membres ───────────────────────────────────────────────────────────
 function MembersPanel({ group, isGroupAdmin }) {
+    if (!group.members) return <SkeletonMembersList />;
+
     const [email, setEmail] = useState('');
     const [showForm, setShowForm] = useState(false);
     const { mutate: addMember, isPending } = useAddMember(group._id);
@@ -200,14 +203,13 @@ function MembersPanel({ group, isGroupAdmin }) {
 // ── Panneau cycle actif ───────────────────────────────────────────────────────
 function CyclePanel({ groupId, currency }) {
     const { data: cycles, isLoading } = useGroupCycles(groupId);
-    const { data: summary } = useGroupDebtSummary(groupId);
 
     const activeCycle = cycles?.find((c) => c.status === 'active')
         ?? cycles?.[0];
 
     const { data: cycleData } = useCycle(groupId, activeCycle?._id);
 
-    if (isLoading) return <Card><Spinner className="text-primary-500 mx-auto my-8" /></Card>;
+    if (isLoading || !cycleData) return <SkeletonCycleCard />;
 
     const cycle = cycleData?.cycle || activeCycle;
     const contributions = cycleData?.contributions || [];
