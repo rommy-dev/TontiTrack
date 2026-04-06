@@ -2,6 +2,24 @@ import { contributionService } from './contribution.service.js';
 import { catchAsync }          from '../../utils/catchAsync.js';
 
 export const contributionController = {
+  getById: catchAsync(async (req, res) => {
+    const contribution = await Contribution.findById(req.params.contributionId)
+      .populate('cycleId',  'cycleNumber startDate dueDate status targetAmount')
+      .populate('groupId',  'name settings')
+      .populate('userId',   'firstName lastName email');
+
+    if (!contribution) throw new NotFoundError('Contribution');
+
+    // Vérifier que le user est concerné ou membre du groupe
+    const isSelf   = contribution.userId._id.equals(req.user._id);
+    const { Group } = await import('../groups/group.model.js');
+    const group    = await Group.findById(contribution.groupId);
+    const isMember = group?.hasMember(req.user._id);
+
+    if (!isSelf && !isMember) throw new ForbiddenError('Accès refusé');
+
+    res.json({ status: 'success', data: { contribution } });
+  }),
 
   recordPayment: catchAsync(async (req, res) => {
     // L'utilisateur envoie le montant en unités entières (ex : 5000)

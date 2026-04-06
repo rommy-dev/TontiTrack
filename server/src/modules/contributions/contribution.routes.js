@@ -22,5 +22,6 @@ router.post(
 );
 router.get('/me',                                 contributionController.getMyContributions);
 router.get('/group/:groupId/summary',             contributionController.getGroupDebtSummary);
+router.get('/:contributionId',                    contributionController.getById);
 
 export default router;

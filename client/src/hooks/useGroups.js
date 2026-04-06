@@ -3,10 +3,9 @@ import toast from 'react-hot-toast';
 import { groupsApi } from '../api/groups.api.js';
 
 export const groupKeys = {
-  all:     ['groups'],
-  detail:  (id) => ['groups', id],
-  cycles:  (id) => ['groups', id, 'cycles'],
-  summary: (id) => ['groups', id, 'summary'],
+  all:    ['groups'],
+  detail: (id) => ['groups', id],
+  cycles: (id) => ['groups', id, 'cycles'],
 };
 
 export function useGroups() {
@@ -65,14 +64,6 @@ export function useGroupCycles(groupId) {
   return useQuery({
     queryKey: groupKeys.cycles(groupId),
     queryFn:  () => groupsApi.getCycles(groupId).then((r) => r.data.data.cycles),
-    enabled:  !!groupId,
-  });
-}
-
-export function useGroupDebtSummary(groupId) {
-  return useQuery({
-    queryKey: groupKeys.summary(groupId),
-    queryFn:  () => groupsApi.getDebtSummary(groupId).then((r) => r.data.data.summary),
     enabled:  !!groupId,
   });
 }
