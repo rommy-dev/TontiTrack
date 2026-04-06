@@ -3,8 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore.js';
 
 // Layouts
-import AuthLayout    from './layouts/AuthLayout.jsx';
-import DashboardLayout from './layouts/DashboardLayout.jsx';
+import AuthLayout    from './components/layout/AuthLayout.jsx';
+import DashboardLayout from './components/layout/DashboardLayout.jsx';
 
 // Pages auth
 import LoginPage    from './pages/auth/LoginPage.jsx';
