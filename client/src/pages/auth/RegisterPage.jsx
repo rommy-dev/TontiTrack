@@ -146,7 +146,7 @@ export default function RegisterPage() {
 
             <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
                 Déjà un compte ?{' '}
-                <Link to="/login" className="text-primary-600 dark:text-primary-400 font-medium hover:underline">
+                <Link to="/login" className="text-primary-600 dark:text-primary-400 font-medium hover:underline transition-all duration-200 ease-in-out">
                     Se connecter
                 </Link>
             </p>
