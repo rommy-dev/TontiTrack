@@ -26,13 +26,16 @@ export const useThemeStore = create(
       toggle() {
         const current = get().isDark;
         const next = !current;
-        set({ theme: next ? 'dark' : 'light' });
+        set({ 
+          theme: next ? 'dark' : 'light',
+          isDark: next
+        });
         applyTheme(next);
       },
 
       // Revenir au système
       resetToSystem() {
-        set({ theme: null });
+        set({ theme: null, isDark: systemPrefersDark() });
         applyTheme(systemPrefersDark());
       },
 
@@ -40,15 +43,23 @@ export const useThemeStore = create(
       init() {
         const { theme } = get();
         if (theme === null) {
-          applyTheme(systemPrefersDark());
+          const systemDark = systemPrefersDark();
+          set({ isDark: systemDark });
+          applyTheme(systemDark);
           // Écouter les changements de préférence système en temps réel
           window
             .matchMedia('(prefers-color-scheme: dark)')
             .addEventListener('change', (e) => {
-              if (get().theme === null) applyTheme(e.matches);
+              if (get().theme === null) {
+                set({ isDark: e.matches });
+                applyTheme(e.matches);
+              }
             });
         } else {
-          applyTheme(theme === 'dark');
+          const isDark = theme === 'dark';
+          applyTheme(isDark);
+          set({ isDark });
+          applyTheme(isDark);
         }
       },
     }),
