@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore.js';
 
 const api = axios.create({
-  baseURL:         import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL:         import.meta.env.VITE_API_URL,
   withCredentials: true,   // envoie le cookie refreshToken automatiquement
   headers:         { 'Content-Type': 'application/json' },
 });
@@ -50,7 +50,7 @@ api.interceptors.response.use(
       try {
         // Le cookie refreshToken est envoyé automatiquement (withCredentials)
         const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
+          `${import.meta.env.VITE_API_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
