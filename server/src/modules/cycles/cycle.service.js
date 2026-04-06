@@ -99,6 +99,19 @@ export const cycleService = {
     return { cycle, contributions };
   },
 
+  async getGroupCycles(groupId, requestingUserId) {
+    // Vérifier que l'utilisateur est membre du groupe
+    const group = await Group.findById(groupId);
+    if (!group) throw new NotFoundError('Groupe');
+    if (!group.hasMember(requestingUserId)) throw new ForbiddenError('Accès refusé');
+
+    const cycles = await Cycle.find({ groupId })
+      .populate('beneficiaryId', 'firstName lastName')
+      .sort({ cycleNumber: 1 });
+
+    return cycles;
+  },
+
   // Appelé par le cron job chaque jour
   async checkAndUpdateCycleStatuses() {
     const now = new Date();
