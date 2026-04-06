@@ -84,10 +84,12 @@ export const authService = {
     // Rotation : supprimer l'ancien, émettre un nouveau
     const { accessToken, refreshToken } = generateTokens(user._id);
 
-    await User.findByIdAndUpdate(user._id, {
-      $pull: { refreshTokens: incomingRefreshToken },
-      $push: { refreshTokens: refreshToken },
-    });
+    // Modifier le tableau en mémoire
+    const updatedTokens = user.refreshTokens.filter(t => t !== incomingRefreshToken);
+    updatedTokens.push(refreshToken);
+
+    // Mettre à jour avec $set (pas de conflit)
+    await User.findByIdAndUpdate(user._id, { $set: { refreshTokens: updatedTokens } });
 
     return { accessToken, refreshToken };
   },
