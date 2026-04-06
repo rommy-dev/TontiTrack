@@ -5,6 +5,9 @@ import { authApi }               from '../api/auth.api.js';
 import { useAuthStore }          from '../store/authStore.js';
 import { useQueryClient }        from '@tanstack/react-query';
 import { groupKeys }             from './useGroups.js';
+import { contributionKeys }       from './useContributions.js';
+import { cycleKeys }             from './useCycles.js';
+import { groupsApi }             from '../api/groups.api.js';
 
 export function useLogin() {
   const setAuth   = useAuthStore((s) => s.setAuth);
@@ -15,7 +18,21 @@ export function useLogin() {
     mutationFn: (credentials) => authApi.login(credentials),
     onSuccess: ({ data }) => {
       setAuth({ user: data.data.user, accessToken: data.data.accessToken });
-      qc.invalidateQueries({ queryKey: groupKeys.all });
+
+      qc.prefetchQuery({
+        queryKey: ['user', 'me'],
+        queryFn: () => authApi.getMe().then(r => r.data.data.user),
+        staleTime: 5 * 60 * 1000, // 5 min
+      });
+
+      qc.prefetchQuery({
+        queryKey: groupKeys.all,
+        queryFn: () => groupsApi.getAll().then(r => r.data.data.groups),
+      });
+
+      qc.invalidateQueries({ queryKey: contributionKeys.all });
+      qc.invalidateQueries({ queryKey: cycleKeys.all });
+
       toast.success(`Bienvenue, ${data.data.user.firstName} !`);
       navigate('/dashboard');
     },
@@ -34,7 +51,11 @@ export function useRegister() {
     mutationFn: (data) => authApi.register(data),
     onSuccess: ({ data }) => {
       setAuth({ user: data.data.user, accessToken: data.data.accessToken });
+
       qc.invalidateQueries({ queryKey: groupKeys.all });
+      qc.invalidateQueries({ queryKey: contributionKeys.all });
+      qc.invalidateQueries({ queryKey: cycleKeys.all });
+
       toast.success('Compte créé avec succès !');
       navigate('/dashboard');
     },
