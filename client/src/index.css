@@ -1,3 +1,238 @@
+/* client/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Variables CSS — mode clair (défaut) ─────────────────────────────────── */
+@layer base {
+  :root {
+    /* PRIMARY (confiance / argent / tontine) */
+    --color-primary-50: #f3faf7;
+    --color-primary-100: #dff3ea;
+    --color-primary-200: #bfe7d4;
+    --color-primary-300: #8fd3b5;
+    --color-primary-400: #5dbb95;
+    --color-primary-500: #2f9e73; /* base */
+    --color-primary-600: #257f5c;
+    --color-primary-700: #1f684c;
+    --color-primary-800: #1a533d;
+
+    /* SUCCESS */
+    --color-success-500: #15803d;
+    --color-success-600: #166534;
+
+    /* WARNING (plus terre, moins flashy) */
+    --color-warning-500: #d97706;
+    --color-warning-600: #b45309;
+
+    /* DANGER (adouci) */
+    --color-danger-500: #dc2626;
+    --color-danger-600: #b91c1c;
+
+    /* NEUTRAL (plus chaud, moins "tech") */
+    --color-gray-50: #fafaf9;
+    --color-gray-100: #f5f5f4;
+    --color-gray-200: #e7e5e4;
+    --color-gray-300: #d6d3d1;
+    --color-gray-400: #a8a29e;
+    --color-gray-500: #78716c;
+    --color-gray-700: #44403c;
+    --color-gray-900: #1c1917;
+
+    /* BACKGROUND */
+    --color-bg: #ffffff;
+    --color-surface: #fafaf9;
+
+    /* TEXT */
+    --color-text-primary: #1c1917;
+    --color-text-secondary: #78716c;
+    --color-text-inverse: #ffffff;
+
+    /* Bordures */
+    --color-border: #e7e5e4;
+    --color-border-focus: #2f9e73;
+
+    /* Sidebar */
+    --sidebar-width: 16rem;
+  }
+
+  /* ── Variables CSS — mode sombre ──────────────────────────────────────── */
+  .dark {
+    /* PRIMARY (confiance) - adapté pour fond sombre */
+    --color-primary-50: #1a533d;
+    --color-primary-100: #1f684c;
+    --color-primary-200: #257f5c;
+    --color-primary-300: #2f9e73;
+    --color-primary-400: #5dbb95;
+    --color-primary-500: #8fd3b5;   
+    --color-primary-600: #bfe7d4;
+    --color-primary-700: #dff3ea;
+    --color-primary-800: #f3faf7;
+
+    /* SUCCESS (paiement OK) - adapté pour fond sombre */
+    --color-success-50: #052e16;
+    --color-success-100: #064e3b;
+    --color-success-500: #4ade80;
+    --color-success-600: #22c55e;
+    --color-success-700: #15803d;
+
+    /* WARNING (retard léger) - adapté pour fond sombre */
+    --color-warning-50: #451a03;
+    --color-warning-100: #78350f;
+    --color-warning-500: #fbbf24;
+    --color-warning-600: #f59e0b;
+    --color-warning-700: #d97706;
+
+    /* DANGER (impayé critique) - adapté pour fond sombre */
+    --color-danger-50: #450a0a;
+    --color-danger-100: #7f1d1d;
+    --color-danger-500: #f87171;
+    --color-danger-600: #ef4444;
+    --color-danger-700: #dc2626;
+
+    /* NEUTRAL - adapté pour fond sombre */
+    --color-gray-50: #1c1917;
+    --color-gray-100: #44403c;
+    --color-gray-200: #78716c;
+    --color-gray-300: #a8a29e;
+    --color-gray-400: #d6d3d1;
+    --color-gray-500: #e7e5e4;
+    --color-gray-600: #f5f5f4;
+    --color-gray-700: #fafaf9;
+    --color-gray-800: #fefdfb;
+    --color-gray-900: #ffffff;
+
+    /* BACKGROUND */
+    --color-bg: #1c1917;       /* fond principal très sombre */
+    --color-surface: #44403c;   /* cartes et surfaces */
+
+    /* TEXT */
+    --color-text-primary: #fefdfb;
+    --color-text-secondary: #d6d3d1;
+    --color-text-inverse: #1c1917;
+
+    /* Bordures */
+    --color-border: #78716c;
+    --color-border-focus: #8fd3b5;
+  }
+
+  /* ── Reset et styles de base ──────────────────────────────────────────── */
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    @apply antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    @apply font-sans text-base leading-relaxed transition-colors duration-200;
+  }
+
+  /* Scrollbar custom — subtile et cohérente avec le thème */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-300);
+    border-radius: 3px;
+  }
+  .dark ::-webkit-scrollbar-thumb { background-color: var(--color-gray-200); }
+}
+
+/* ── Classes utilitaires custom ──────────────────────────────────────────── */
+@layer components {
+
+  /* Carte de base — utilisée partout */
+  .card {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    @apply rounded-xl shadow-card;
+  }
+
+  /* Surface légèrement surélevée */
+  .surface {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    @apply rounded-xl;
+  }
+
+  /* Input standard */
+  .input {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    @apply w-full rounded-lg px-3 py-2 text-sm
+           placeholder:text-gray-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-colors duration-150;
+  }
+  .input:disabled {
+    background-color: var(--color-surface);
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  /* Bouton primaire */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 rounded-lg text-sm font-medium
+           bg-primary-500 text-white
+           hover:bg-primary-600 active:bg-primary-700
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-150;
+  }
+
+  /* Bouton secondaire */
+  .btn-secondary {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 rounded-lg text-sm font-medium
+           hover:opacity-80 active:scale-95
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-150;
+  }
+
+  /* Bouton destructif */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2
+           px-4 py-2 rounded-lg text-sm font-medium
+           bg-danger-500 text-white
+           hover:bg-danger-600 active:bg-danger-700
+           focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-150;
+  }
+
+  /* Badge de statut financier */
+  .badge-success { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-500; }
+  .badge-warning { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-500; }
+  .badge-danger  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-danger-50  text-danger-600  dark:bg-danger-500/10  dark:text-danger-500;  }
+  .badge-neutral { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100   text-gray-600    dark:bg-gray-700       dark:text-gray-300;   }
+  .badge-primary { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-500; }
+
+  /* Lien */
+  .link {
+    color: var(--color-primary-500);
+    @apply underline-offset-2 hover:underline focus:outline-none;
+  }
+
+  /* Séparateur */
+  .divider {
+    border-color: var(--color-border);
+    @apply border-t;
+  }
+
+  /* Texte secondaire standard */
+  .text-muted {
+    color: var(--color-text-secondary);
+    @apply text-sm;
+  }
+}
