@@ -1,7 +1,8 @@
 import { useLocation } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore.js';
 import { cn } from '../../lib/utils.js';
+import ThemeToggle from '../ui/ThemeToggle.jsx';
 
 const PAGE_TITLES = {
   '/dashboard':     'Tableau de bord',
@@ -10,7 +11,7 @@ const PAGE_TITLES = {
   '/profile':       'Mon profil',
 };
 
-export default function Topbar({ sidebarCollapsed }) {
+export default function Topbar({ sidebarCollapsed, onMobileMenuToggle }) {
   const location = useLocation();
   const user     = useAuthStore((s) => s.user);
 
@@ -30,9 +31,19 @@ export default function Topbar({ sidebarCollapsed }) {
       'flex items-center justify-between px-6',
       'transition-all duration-200'
     )}>
-      <h1 className="text-base font-semibold text-gray-800 dark:text-gray-100">
-        {title}
-      </h1>
+      <div className="flex items-center gap-4">
+        {/* Bouton menu mobile */}
+        <button
+          onClick={onMobileMenuToggle}
+          className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <Menu size={18} />
+        </button>
+
+        <h1 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+          {title}
+        </h1>
+      </div>
 
       <div className="flex items-center gap-2">
         {/* Cloche de notification — placeholder pour Phase 4 */}
@@ -41,6 +52,10 @@ export default function Topbar({ sidebarCollapsed }) {
           {/* Point rouge — notification non lue */}
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-danger-500 rounded-full" />
         </button>
+
+        <div className="ml-auto">
+          <ThemeToggle className="text-gray-400" />
+        </div>
 
         {/* Avatar user */}
         <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
