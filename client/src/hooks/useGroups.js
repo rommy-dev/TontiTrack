@@ -48,6 +48,19 @@ export function useAddMember(groupId) {
   });
 }
 
+export function useActivateGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId) => groupsApi.activate(groupId),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: groupKeys.all });
+      qc.invalidateQueries({ queryKey: groupKeys.detail() }); // invalidate all details
+      toast.success('Groupe activé !');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Erreur activation'),
+  });
+}
+
 export function useGroupCycles(groupId) {
   return useQuery({
     queryKey: groupKeys.cycles(groupId),

@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { UserPlus, ChevronLeft, Users } from 'lucide-react';
-import { useGroup, useGroupCycles, useGroupDebtSummary, useAddMember } from '../../hooks/useGroups.js';
+import { useGroup, useActivateGroup, useAddMember } from '../../hooks/useGroups.js';
+import { useGroupCycles, useCreateCycle, useCycle } from '../../hooks/useCycles.js';
+import { useGroupDebtSummary } from '../../hooks/useContributions.js';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Input from '../../components/ui/Input.jsx';
@@ -10,6 +12,111 @@ import Spinner from '../../components/ui/Spinner.jsx';
 import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import { CycleBadge, ContributionBadge } from '../../components/ui/Badge.jsx';
 import { formatCurrency, formatDate } from '../../lib/utils.js';
+
+// ── Modal de création de cycle ───────────────────────────────────────────────
+function CreateCycleModal({ group, onClose }) {
+    const [form, setForm] = useState({
+        beneficiaryId: '',
+        startDate: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:MM
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16), // +30 jours
+    });
+    const [errors, setErrors] = useState({});
+    const { mutate: create, isPending } = useCreateCycle(group._id);
+
+    function validate() {
+        const errs = {};
+        if (!form.startDate) errs.startDate = 'Date de début requise';
+        if (!form.dueDate) errs.dueDate = 'Date d\'échéance requise';
+        if (new Date(form.dueDate) <= new Date(form.startDate)) {
+            errs.dueDate = 'L\'échéance doit être après le début';
+        }
+        setErrors(errs);
+        return Object.keys(errs).length === 0;
+    }
+
+    function handleSubmit(e) {
+        e.preventDefault();
+        if (!validate()) return;
+
+        // Normaliser les dates pour Zod (ajouter :00Z)
+        const normalizeDate = (dateStr) => new Date(dateStr).toISOString();
+
+        create({
+            beneficiaryId: form.beneficiaryId || undefined,
+            startDate: normalizeDate(form.startDate),
+            dueDate: normalizeDate(form.dueDate),
+        }, {
+            onSuccess: () => onClose(),
+        });
+    }
+
+    const activeMembers = group.members?.filter(m => m.status === 'active') || [];
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-modal w-full max-w-lg animate-fade-in">
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        Nouveau cycle
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        ✕
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                            Bénéficiaire (optionnel)
+                        </label>
+                        <select
+                            value={form.beneficiaryId}
+                            onChange={(e) => setForm((s) => ({ ...s, beneficiaryId: e.target.value }))}
+                            className="input"
+                        >
+                            <option value="">Aucun bénéficiaire</option>
+                            {activeMembers.map((m) => (
+                                <option key={m.userId._id} value={m.userId._id}>
+                                    {m.userId.firstName} {m.userId.lastName}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <Input
+                        label="Date de début"
+                        type="datetime-local"
+                        value={form.startDate}
+                        onChange={(e) => setForm((s) => ({ ...s, startDate: e.target.value }))}
+                        error={errors.startDate}
+                        required
+                    />
+
+                    <Input
+                        label="Date d'échéance"
+                        type="datetime-local"
+                        value={form.dueDate}
+                        onChange={(e) => setForm((s) => ({ ...s, dueDate: e.target.value }))}
+                        error={errors.dueDate}
+                        required
+                    />
+
+                    <div className="flex gap-3 pt-2">
+                        <Button type="button" variant="secondary" fullWidth onClick={onClose}>
+                            Annuler
+                        </Button>
+                        <Button type="submit" fullWidth loading={isPending}>
+                            Créer le cycle
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
 
 // ── Panneau membres ───────────────────────────────────────────────────────────
 function MembersPanel({ group }) {
@@ -94,12 +201,17 @@ function CyclePanel({ groupId, currency }) {
     const { data: cycles, isLoading } = useGroupCycles(groupId);
     const { data: summary } = useGroupDebtSummary(groupId);
 
-    if (isLoading) return <Card><Spinner className="text-primary-500 mx-auto my-8" /></Card>;
-
     const activeCycle = cycles?.find((c) => c.status === 'active')
         ?? cycles?.[0];
 
-    if (!activeCycle) return (
+    const { data: cycleData } = useCycle(groupId, activeCycle?._id);
+
+    if (isLoading) return <Card><Spinner className="text-primary-500 mx-auto my-8" /></Card>;
+
+    const cycle = cycleData?.cycle || activeCycle;
+    const contributions = cycleData?.contributions || [];
+
+    if (!cycle) return (
         <Card>
             <div className="text-center py-8">
                 <p className="text-sm text-gray-400 dark:text-gray-500">
@@ -112,18 +224,18 @@ function CyclePanel({ groupId, currency }) {
     return (
         <Card>
             <Card.Header>
-                <Card.Title>Cycle #{activeCycle.cycleNumber}</Card.Title>
-                <CycleBadge status={activeCycle.status} />
+                <Card.Title>Cycle #{cycle.cycleNumber}</Card.Title>
+                <CycleBadge status={cycle.status} />
             </Card.Header>
 
             <div className="grid grid-cols-2 gap-3 mb-5">
                 {[
-                    { label: 'Objectif', value: formatCurrency(activeCycle.targetAmount, currency) },
-                    { label: 'Échéance', value: formatDate(activeCycle.dueDate) },
-                    { label: 'Début', value: formatDate(activeCycle.startDate) },
+                    { label: 'Objectif', value: formatCurrency(cycle.targetAmount, currency) },
+                    { label: 'Échéance', value: formatDate(cycle.dueDate) },
+                    { label: 'Début', value: formatDate(cycle.startDate) },
                     {
-                        label: 'Bénéficiaire', value: activeCycle.beneficiaryId
-                            ? `${activeCycle.beneficiaryId.firstName} ${activeCycle.beneficiaryId.lastName}`
+                        label: 'Bénéficiaire', value: cycle.beneficiaryId
+                            ? `${cycle.beneficiaryId.firstName} ${cycle.beneficiaryId.lastName}`
                             : '—'
                     },
                 ].map(({ label, value }) => (
@@ -139,9 +251,9 @@ function CyclePanel({ groupId, currency }) {
                 Contributions
             </p>
 
-            {activeCycle.contributions?.length ? (
+            {contributions?.length ? (
                 <div className="space-y-3">
-                    {activeCycle.contributions.map((c) => (
+                    {contributions.map((c) => (
                         <div key={c._id}>
                             <div className="flex items-center justify-between mb-1.5">
                                 <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">
@@ -178,6 +290,9 @@ function CyclePanel({ groupId, currency }) {
 export default function GroupDetailPage() {
     const { groupId } = useParams();
     const { data: group, isLoading, error } = useGroup(groupId);
+    const { mutate: activateGroup } = useActivateGroup();
+    const { mutate: createCycle } = useCreateCycle(groupId);
+    const [showCreateCycleModal, setShowCreateCycleModal] = useState(false);
 
     if (isLoading) return (
         <div className="flex items-center justify-center py-32">
@@ -222,12 +337,12 @@ export default function GroupDetailPage() {
 
                     <div className="flex items-center gap-2 flex-shrink-0">
                         {group.status === 'draft' && (
-                            <Button size="sm" variant="success">
+                            <Button size="sm" variant="success" onClick={() => activateGroup(groupId)}>
                                 Activer le groupe
                             </Button>
                         )}
                         {group.status === 'active' && (
-                            <Button size="sm" leftIcon={<Users size={14} />}>
+                            <Button size="sm" leftIcon={<Users size={14} />} onClick={() => setShowCreateCycleModal(true)}>
                                 Nouveau cycle
                             </Button>
                         )}
@@ -250,6 +365,9 @@ export default function GroupDetailPage() {
                     />
                 </div>
             </div>
+            {showCreateCycleModal && (
+                <CreateCycleModal group={group} onClose={() => setShowCreateCycleModal(false)} />
+            )}
         </div>
     );
 }
