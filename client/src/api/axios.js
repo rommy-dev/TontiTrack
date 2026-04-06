@@ -34,6 +34,10 @@ api.interceptors.response.use(
 
     // Token expiré et pas encore tenté de refresh
     if (error.response?.status === 401 && !original._retry) {
+      if (original.url?.includes('/auth/login')) {
+        return Promise.reject(error);
+      }
+      
       if (isRefreshing) {
         // Une autre requête est déjà en train de rafraîchir — mettre en queue
         return new Promise((resolve, reject) => {

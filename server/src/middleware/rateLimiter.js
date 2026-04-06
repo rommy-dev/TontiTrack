@@ -1,10 +1,12 @@
 import rateLimit from 'express-rate-limit';
 
+const disableRateLimit = process.env.DISABLE_RATE_LIMITING === 'true';
+
 // Limite stricte pour les routes d'authentification
 // Protège contre le brute-force de mots de passe
 export const authRateLimiter = rateLimit({
   windowMs:        15 * 60 * 1000,  // fenêtre de 15 minutes
-  max:             10,               // max 10 tentatives par IP par fenêtre
+  max:             disableRateLimit ? 1000 : 10,               // max 10 tentatives par IP par fenêtre
   standardHeaders: true,             // headers RateLimit-* dans la réponse
   legacyHeaders:   false,
   message: {
