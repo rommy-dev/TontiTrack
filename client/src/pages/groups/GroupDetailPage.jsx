@@ -5,6 +5,7 @@ import { UserPlus, ChevronLeft, Users } from 'lucide-react';
 import { useGroup, useActivateGroup, useAddMember } from '../../hooks/useGroups.js';
 import { useGroupCycles, useCreateCycle, useCycle } from '../../hooks/useCycles.js';
 import { useGroupDebtSummary } from '../../hooks/useContributions.js';
+import { useAuthStore } from '../../store/authStore.js';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Input from '../../components/ui/Input.jsx';
@@ -119,7 +120,7 @@ function CreateCycleModal({ group, onClose }) {
 }
 
 // ── Panneau membres ───────────────────────────────────────────────────────────
-function MembersPanel({ group }) {
+function MembersPanel({ group, isGroupAdmin }) {
     const [email, setEmail] = useState('');
     const [showForm, setShowForm] = useState(false);
     const { mutate: addMember, isPending } = useAddMember(group._id);
@@ -136,7 +137,7 @@ function MembersPanel({ group }) {
         <Card>
             <Card.Header>
                 <Card.Title>Membres ({group.members?.length ?? 0})</Card.Title>
-                {group.status !== 'completed' && (
+                {group.status !== 'completed' && isGroupAdmin && (
                     <Button
                         size="sm"
                         variant="ghost"
@@ -293,6 +294,12 @@ export default function GroupDetailPage() {
     const { mutate: activateGroup } = useActivateGroup();
     const { mutate: createCycle } = useCreateCycle(groupId);
     const [showCreateCycleModal, setShowCreateCycleModal] = useState(false);
+    const user = useAuthStore((s) => s.user);
+
+    // Vérifier si l'utilisateur connecté est admin du groupe
+    const isGroupAdmin = group?.members?.some(
+        (m) => (m.userId._id || m.userId) === user?.id && m.role === 'admin'
+    );
 
     if (isLoading) return (
         <div className="flex items-center justify-center py-32">
@@ -336,12 +343,12 @@ export default function GroupDetailPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                        {group.status === 'draft' && (
+                        {group.status === 'draft' && isGroupAdmin && (
                             <Button size="sm" variant="success" onClick={() => activateGroup(groupId)}>
                                 Activer le groupe
                             </Button>
                         )}
-                        {group.status === 'active' && (
+                        {group.status === 'active' && isGroupAdmin && (
                             <Button size="sm" leftIcon={<Users size={14} />} onClick={() => setShowCreateCycleModal(true)}>
                                 Nouveau cycle
                             </Button>
@@ -354,7 +361,7 @@ export default function GroupDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Colonne gauche — membres */}
                 <div className="lg:col-span-1">
-                    <MembersPanel group={group} />
+                    <MembersPanel group={group} isGroupAdmin={isGroupAdmin} />
                 </div>
 
                 {/* Colonne droite — cycle + contributions */}
