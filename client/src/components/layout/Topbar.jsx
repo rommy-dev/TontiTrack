@@ -1,8 +1,9 @@
-import { useLocation } from 'react-router-dom';
-import { Bell, Menu } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore.js';
-import { cn } from '../../lib/utils.js';
-import ThemeToggle from '../ui/ThemeToggle.jsx';
+import { useLocation }       from 'react-router-dom';
+import { Menu }                from 'lucide-react';
+import { useAuthStore }        from '../../store/authStore.js';
+import NotificationBell        from '../notifications/NotificationBell.jsx';
+import { cn }                  from '../../lib/utils.js';
+import ThemeToggle             from '../ui/ThemeToggle.jsx';
 
 const PAGE_TITLES = {
   '/dashboard':     'Tableau de bord',
@@ -46,18 +47,14 @@ export default function Topbar({ sidebarCollapsed, onMobileMenuToggle }) {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Cloche de notification — placeholder pour Phase 4 */}
-        <button className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-          <Bell size={18} />
-          {/* Point rouge — notification non lue */}
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-danger-500 rounded-full" />
-        </button>
+        {/* Cloche avec panneau et badge */}
+        <NotificationBell />
 
         <div className="ml-auto">
           <ThemeToggle className="text-gray-400" />
         </div>
 
-        {/* Avatar user */}
+        {/* Avatar */}
         <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
           <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
             {user?.firstName?.[0]}{user?.lastName?.[0]}
