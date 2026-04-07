@@ -4,6 +4,7 @@ import { Cycle }        from './cycle.model.js';
 import { Group }        from '../groups/group.model.js';
 import { Contribution } from '../contributions/contribution.model.js';
 import { NotFoundError, ForbiddenError, ValidationError } from '../../utils/ApiError.js';
+import { notificationService } from '../notifications/notification.service.js';
 
 export const cycleService = {
 
@@ -74,6 +75,23 @@ export const cycleService = {
       await Contribution.insertMany(contributions, { session });
 
       await session.commitTransaction();
+
+      // Notifier tous les membres actifs du nouveau cycle
+      const notifs = activeMembers.map((m) => ({
+        userId:  m.userId,
+        type:    'cycle_started',
+        title:   'Nouveau cycle démarré',
+        message: `Le cycle #${cycleNumber} de "${group.name}" a démarré. Échéance : ${new Date(dueDate).toLocaleDateString('fr-FR')}.`,
+        link:    `/groups/${groupId}`,
+        meta: {
+          groupId,
+          cycleId:   cycle._id,
+          currency:  group.settings.currency,
+          groupName: group.name,
+        },
+      }));
+      await notificationService.createMany(notifs);
+
       return cycle;
 
     } catch (err) {

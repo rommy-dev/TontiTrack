@@ -7,6 +7,7 @@ import { deriveContributionStatus, calculatePenalty } from '../../utils/finance.
 import {
   NotFoundError, ForbiddenError, ValidationError
 } from '../../utils/ApiError.js';
+import { notificationService } from '../notifications/notification.service.js';
 
 export const contributionService = {
 
@@ -100,6 +101,22 @@ export const contributionService = {
       }
 
       await session.commitTransaction();
+
+      // Notification de confirmation (hors session — pas critique)
+      await notificationService.create({
+        userId:  payerId,
+        type:    'payment_confirmed',
+        title:   'Paiement confirmé',
+        message: `Votre paiement de ${amountCents / 100} ${cycle.currency} a été enregistré pour le cycle #${cycle.cycleNumber}.`,
+        link:    `/contributions`,
+        meta: {
+          groupId:        contribution.groupId,
+          cycleId:        contribution.cycleId,
+          contributionId: contributionId,
+          amountCents,
+          currency:       cycle.currency,
+        },
+      });
 
       // Vérifier si tous les membres ont payé → compléter le cycle
       // Fait hors session — pas critique si ça échoue (le cron job corrigera)
