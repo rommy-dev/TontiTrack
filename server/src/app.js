@@ -15,6 +15,7 @@ import groupRoutes        from './modules/groups/group.routes.js';
 import cycleRoutes        from './modules/cycles/cycle.routes.js';
 import contributionRoutes from './modules/contributions/contribution.routes.js';
 import transactionRoutes  from './modules/transactions/transaction.routes.js';
+import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/groups/:groupId/cycles', cycleRoutes);
 
 app.use('/api/contributions',  contributionRoutes);
 app.use('/api/transactions',   transactionRoutes);
+app.use('/api/dashboard',      dashboardRoutes);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
