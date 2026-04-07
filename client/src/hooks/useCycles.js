@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { cyclesApi } from '../api/cycles.api.js';
+import { dashboardKeys } from './useDashboard.js';
 
 export const cycleKeys = {
   all:     ['cycles'],
@@ -30,6 +31,8 @@ export function useCreateCycle(groupId) {
     mutationFn: (data) => cyclesApi.createCycle(groupId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: cycleKeys.group(groupId) });
+      qc.invalidateQueries({ queryKey: dashboardKeys.kpis });
+      qc.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Cycle créé !');
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Erreur création cycle'),

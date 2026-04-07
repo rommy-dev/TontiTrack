@@ -56,8 +56,14 @@ export function useLogin() {
         queryFn: () => transactionsApi.getMine({ page: 1, limit: 10 }).then((r) => r.data.data),
       });
 
+      qc.invalidateQueries({ queryKey: dashboardKeys.kpis });
+      qc.invalidateQueries({ queryKey: dashboardKeys.monthly });
+      qc.invalidateQueries({ queryKey: dashboardKeys.breakdown });
+      qc.invalidateQueries({ queryKey: dashboardKeys.debt });
+      qc.invalidateQueries({ queryKey: txKeys.mine() });
       qc.invalidateQueries({ queryKey: contributionKeys.all });
       qc.invalidateQueries({ queryKey: cycleKeys.all });
+      qc.invalidateQueries({ queryKey: ['notifications'] });
 
       toast.success(`Bienvenue, ${data.data.user.firstName} !`);
       navigate('/dashboard');
