@@ -1,5 +1,5 @@
 import { useState }          from 'react';
-import { ArrowUpRight, ArrowDownLeft, AlertCircle, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Filter, X } from 'lucide-react';
 import { useMyTransactions } from '../../hooks/useTransactions.js';
 import Card    from '../ui/Card.jsx';
 import Spinner from '../ui/Spinner.jsx';
@@ -47,6 +47,7 @@ const TYPE_FILTERS = [
 export default function TransactionHistory({ groupId, title = 'Historique des transactions' }) {
   const [page,   setPage]   = useState(1);
   const [type,   setType]   = useState('');
+  const [showMobileFilter, setShowMobileFilter] = useState(false);
 
   // useMyTransactions si pas de groupId, sinon filtrer par groupe
   const { data, isLoading } = useMyTransactions({
@@ -64,8 +65,9 @@ export default function TransactionHistory({ groupId, title = 'Historique des tr
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
         <Card.Title>{title}</Card.Title>
-        {/* Filtre type */}
-        <div className="flex gap-1">
+        
+        {/* Desktop: boutons de filtre */}
+        <div className="hidden md:flex gap-1">
           {TYPE_FILTERS.map(({ value, label }) => (
             <button
               key={value}
@@ -80,7 +82,72 @@ export default function TransactionHistory({ groupId, title = 'Historique des tr
             </button>
           ))}
         </div>
+
+        {/* Mobile: bouton filtrer */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setShowMobileFilter(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Filter size={14} />
+            Filtrer
+            {type && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-primary-100 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400">
+                {TYPE_FILTERS.find(f => f.value === type)?.label}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile: menu déroulant des filtres */}
+      {showMobileFilter && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowMobileFilter(false)}
+          />
+          
+          {/* Menu */}
+          <div className="relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between px-5 py-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Filtrer par type
+              </h3>
+              <button
+                onClick={() => setShowMobileFilter(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="px-5 pb-4 space-y-2">
+              {TYPE_FILTERS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => { 
+                    setType(value); 
+                    setPage(1); 
+                    setShowMobileFilter(false); 
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    type === value
+                      ? 'bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-500/30'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent'
+                  }`}
+                >
+                  {label}
+                  {type === value && (
+                    <div className="w-2 h-2 rounded-full bg-primary-500" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Liste */}
       {isLoading ? (
