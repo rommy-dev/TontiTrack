@@ -209,7 +209,7 @@ function CyclePanel({ groupId, currency }) {
 
     const { data: cycleData } = useCycle(groupId, activeCycle?._id);
 
-    if (isLoading || !cycleData) return <SkeletonCycleCard />;
+    if (isLoading) return <SkeletonCycleCard />;
 
     const cycle = cycleData?.cycle || activeCycle;
     const contributions = cycleData?.contributions || [];

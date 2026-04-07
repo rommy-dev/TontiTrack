@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { groupsApi } from '../api/groups.api.js';
 import { dashboardKeys } from './useDashboard.js';
 import { contributionKeys } from './useContributions.js';
+import { notifKeys } from './useNotifications.js';
 
 export const groupKeys = {
   all:    ['groups'],
@@ -44,6 +45,7 @@ export function useAddMember(groupId) {
     mutationFn: (data) => groupsApi.addMember(groupId, data),
     onSuccess:  () => {
       qc.invalidateQueries({ queryKey: groupKeys.detail(groupId) });
+      qc.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Membre ajouté !');
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Erreur'),

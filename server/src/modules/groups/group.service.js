@@ -1,5 +1,6 @@
 // src/modules/groups/group.service.js
 import { Group } from './group.model.js';
+import { notificationService } from '../notifications/notification.service.js';
 import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from '../../utils/ApiError.js';
 
 export const groupService = {
@@ -68,6 +69,20 @@ export const groupService = {
     }
 
     await group.save();
+
+    // Créer une notification pour le nouveau membre
+    await notificationService.create({
+      userId: newMember._id,
+      type: 'member_joined',
+      title: `Vous avez été ajouté au groupe ${group.name}`,
+      message: `${group.description || 'Vous pouvez maintenant participer aux contributions.'}`,
+      link: `/groups/${group._id}`,
+      meta: {
+        groupId: group._id,
+        groupName: group.name,
+      },
+    });
+
     return group;
   },
 

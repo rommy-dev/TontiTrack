@@ -1,6 +1,7 @@
 import request from 'supertest';
 import app     from '../../src/app.js';
 import { User  } from '../../src/modules/users/user.model.js';
+import { Notification } from '../../src/modules/notifications/notification.model.js';
 
 // Helper : crée un user et retourne son token
 async function createUserAndLogin(email = 'test@test.com') {
@@ -74,6 +75,38 @@ describe('Groups API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.group.members).toHaveLength(2);
+    });
+
+    it('crée une notification quand un membre est ajouté', async () => {
+      // 1. Créer le groupe
+      const groupRes = await request(app)
+        .post('/api/groups')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ name: 'G1', type: 'tontine', settings: { targetAmount: 10000, currency: 'XAF' } });
+
+      const groupId = groupRes.body.data.group._id;
+
+      // 2. Créer un second user
+      const registerRes = await request(app).post('/api/auth/register').send({
+        firstName: 'Alice', lastName: 'Smith', email: 'alice@example.com', password: 'Password123!',
+      });
+      const newUserId = registerRes.body.data.user.id;
+
+      // 3. Ajouter Alice au groupe
+      await request(app)
+        .post(`/api/groups/${groupId}/members`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'alice@example.com' });
+
+      // 4. Vérifier que la notification a été créée
+      const notif = await Notification.findOne({
+        userId: newUserId,
+        type: 'member_joined',
+      });
+
+      expect(notif).toBeDefined();
+      expect(notif.title).toContain('G1');
+      expect(notif.meta.groupId.toString()).toEqual(groupId.toString());
     });
 
     it('retourne 409 si le membre est déjà dans le groupe', async () => {
