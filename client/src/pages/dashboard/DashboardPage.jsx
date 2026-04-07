@@ -1,4 +1,3 @@
-// src/pages/dashboard/DashboardPage.jsx
 import { Link }               from 'react-router-dom';
 import { Users, CreditCard, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useDashboardKpis }   from '../../hooks/useDashboard.js';

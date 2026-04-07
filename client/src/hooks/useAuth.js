@@ -7,7 +7,11 @@ import { useQueryClient }        from '@tanstack/react-query';
 import { groupKeys }             from './useGroups.js';
 import { contributionKeys }       from './useContributions.js';
 import { cycleKeys }             from './useCycles.js';
+import { dashboardKeys }         from './useDashboard.js';
+import { txKeys }                from './useTransactions.js';
 import { groupsApi }             from '../api/groups.api.js';
+import { dashboardApi }          from '../api/dashboard.api.js';
+import { transactionsApi }       from '../api/transactions.api.js';
 
 export function useLogin() {
   const setAuth   = useAuthStore((s) => s.setAuth);
@@ -28,6 +32,28 @@ export function useLogin() {
       qc.prefetchQuery({
         queryKey: groupKeys.all,
         queryFn: () => groupsApi.getAll().then(r => r.data.data.groups),
+      });
+
+      qc.prefetchQuery({
+        queryKey: dashboardKeys.kpis,
+        queryFn: () => dashboardApi.getKpis().then((r) => r.data.data),
+      });
+      qc.prefetchQuery({
+        queryKey: dashboardKeys.monthly,
+        queryFn: () => dashboardApi.getMonthly().then((r) => r.data.data),
+      });
+      qc.prefetchQuery({
+        queryKey: dashboardKeys.breakdown,
+        queryFn: () => dashboardApi.getStatusBreakdown().then((r) => r.data.data),
+      });
+      qc.prefetchQuery({
+        queryKey: dashboardKeys.debt,
+        queryFn: () => dashboardApi.getDebtByGroup().then((r) => r.data.data),
+      });
+
+      qc.prefetchQuery({
+        queryKey: txKeys.mine({ page: 1, limit: 10 }),
+        queryFn: () => transactionsApi.getMine({ page: 1, limit: 10 }).then((r) => r.data.data),
       });
 
       qc.invalidateQueries({ queryKey: contributionKeys.all });

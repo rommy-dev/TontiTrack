@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '../api/dashboard.api.js';
 
-const keys = {
+export const dashboardKeys = {
   kpis:      ['dashboard', 'kpis'],
   monthly:   ['dashboard', 'monthly'],
   breakdown: ['dashboard', 'breakdown'],
@@ -10,7 +10,7 @@ const keys = {
 
 export function useDashboardKpis() {
   return useQuery({
-    queryKey: keys.kpis,
+    queryKey: dashboardKeys.kpis,
     queryFn:  () => dashboardApi.getKpis().then((r) => r.data.data),
     staleTime: 1000 * 60,   // 1 minute — les KPIs changent peu souvent
   });
@@ -18,7 +18,7 @@ export function useDashboardKpis() {
 
 export function useMonthlyChart() {
   return useQuery({
-    queryKey: keys.monthly,
+    queryKey: dashboardKeys.monthly,
     queryFn:  () => dashboardApi.getMonthly().then((r) => r.data.data),
     staleTime: 1000 * 60 * 5,
   });
@@ -26,7 +26,7 @@ export function useMonthlyChart() {
 
 export function useStatusBreakdown() {
   return useQuery({
-    queryKey: keys.breakdown,
+    queryKey: dashboardKeys.breakdown,
     queryFn:  () => dashboardApi.getStatusBreakdown().then((r) => r.data.data),
     staleTime: 1000 * 60 * 2,
   });
@@ -34,7 +34,7 @@ export function useStatusBreakdown() {
 
 export function useDebtByGroup() {
   return useQuery({
-    queryKey: keys.debt,
+    queryKey: dashboardKeys.debt,
     queryFn:  () => dashboardApi.getDebtByGroup().then((r) => r.data.data),
     staleTime: 1000 * 60 * 2,
   });
