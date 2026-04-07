@@ -2,7 +2,7 @@ import { useState }          from 'react';
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Filter, X } from 'lucide-react';
 import { useMyTransactions } from '../../hooks/useTransactions.js';
 import Card    from '../ui/Card.jsx';
-import Spinner from '../ui/Spinner.jsx';
+import Skeleton from '../ui/Skeleton.jsx';
 import { formatCurrency, formatDate } from '../../lib/utils.js';
 
 const TYPE_CONFIG = {
@@ -151,8 +151,25 @@ export default function TransactionHistory({ groupId, title = 'Historique des tr
 
       {/* Liste */}
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Spinner className="text-primary-500" />
+        <div className="space-y-2 px-5 py-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-3 px-3 py-3.5 bg-white dark:bg-gray-900/80 border border-gray-100 dark:border-gray-800 rounded-2xl"
+            >
+              <Skeleton className="h-10 w-10 rounded-xl" />
+
+              <div className="flex-1 min-w-0 space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : transactions.length === 0 ? (
         <div className="py-10 text-center">

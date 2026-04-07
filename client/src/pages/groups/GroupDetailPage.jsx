@@ -4,7 +4,6 @@ import { useParams, Link } from 'react-router-dom';
 import { UserPlus, ChevronLeft, Users } from 'lucide-react';
 import { useGroup, useActivateGroup, useAddMember } from '../../hooks/useGroups.js';
 import { useGroupCycles, useCreateCycle, useCycle } from '../../hooks/useCycles.js';
-import { useGroupDebtSummary } from '../../hooks/useContributions.js';
 import { useAuthStore } from '../../store/authStore.js';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -14,6 +13,7 @@ import ProgressBar from '../../components/ui/ProgressBar.jsx';
 import { CycleBadge, ContributionBadge } from '../../components/ui/Badge.jsx';
 import { formatCurrency, formatDate } from '../../lib/utils.js';
 import { SkeletonCycleCard, SkeletonMembersList, SkeletonContributionsList } from '../../components/ui/Skeleton.jsx';
+import TransactionHistory from '../../components/transactions/TransactionHistory.jsx';
 
 // ── Modal de création de cycle ───────────────────────────────────────────────
 function CreateCycleModal({ group, onClose }) {
@@ -373,6 +373,12 @@ export default function GroupDetailPage() {
                         currency={group.settings?.currency}
                     />
                 </div>
+            </div>
+            <div className="mt-6">
+                <TransactionHistory
+                    groupId={groupId}
+                    title="Historique"
+                />
             </div>
             {showCreateCycleModal && (
                 <CreateCycleModal group={group} onClose={() => setShowCreateCycleModal(false)} />
