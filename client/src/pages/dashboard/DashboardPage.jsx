@@ -1,39 +1,63 @@
-import { Users, CreditCard, TrendingUp, AlertCircle, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useGroups }     from '../../hooks/useGroups.js';
-import { useAuthStore }  from '../../store/authStore.js';
-import Card              from '../../components/ui/Card.jsx';
-import Spinner           from '../../components/ui/Spinner.jsx';
-import Badge             from '../../components/ui/Badge.jsx';
-import { formatCurrency } from '../../lib/utils.js';
+// src/pages/dashboard/DashboardPage.jsx
+import { Link }               from 'react-router-dom';
+import { Users, CreditCard, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react';
+import { useDashboardKpis }   from '../../hooks/useDashboard.js';
+import { useAuthStore }       from '../../store/authStore.js';
+import MonthlyChart           from '../../components/charts/MonthlyChart.jsx';
+import StatusDonut            from '../../components/charts/StatusDonut.jsx';
+import DebtTable              from '../../components/charts/DebtTable.jsx';
+import TransactionHistory     from '../../components/transactions/TransactionHistory.jsx';
+import Spinner                from '../../components/ui/Spinner.jsx';
+import { formatCurrency }     from '../../lib/utils.js';
 
-function KpiCard({ icon: Icon, label, value, sub, color }) {
-  const colors = {
-    primary: 'bg-primary-50 dark:bg-primary-500/10 text-primary-500',
-    success: 'bg-success-50 dark:bg-success-500/10 text-success-500',
-    warning: 'bg-warning-50 dark:bg-warning-500/10 text-warning-500',
-    danger:  'bg-danger-50  dark:bg-danger-500/10  text-danger-500',
+// ── Carte KPI ─────────────────────────────────────────────────────────────────
+function KpiCard({ icon: Icon, label, value, sub, color, to }) {
+  const palette = {
+    primary: {
+      icon: 'bg-primary-50 dark:bg-primary-500/10 text-primary-500',
+      val:  'text-gray-900 dark:text-gray-100',
+    },
+    success: {
+      icon: 'bg-success-50 dark:bg-success-500/10 text-success-500',
+      val:  'text-gray-900 dark:text-gray-100',
+    },
+    warning: {
+      icon: 'bg-warning-50 dark:bg-warning-500/10 text-warning-500',
+      val:  'text-gray-900 dark:text-gray-100',
+    },
+    danger: {
+      icon: 'bg-danger-50 dark:bg-danger-500/10 text-danger-500',
+      val:  'text-danger-600 dark:text-danger-400',
+    },
   };
-  return (
-    <Card className="flex items-center gap-4">
-      <div className={`p-3 rounded-xl flex-shrink-0 ${colors[color]}`}>
-        {Icon && <Icon size={20} />}
+  const p = palette[color] ?? palette.primary;
+
+  const inner = (
+    <div className="bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 rounded-xl shadow-card p-5 flex items-center gap-4 transition-all duration-150 hover:shadow-card-hover group">
+      <div className={`p-3 rounded-xl flex-shrink-0 ${p.icon}`}>
+        <Icon size={20} />
       </div>
-      <div>
-        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">{label}</p>
-        <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-0.5">{value}</p>
-        {sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{sub}</p>}
+      <div className="min-w-0">
+        <p className="text-xs text-gray-400 dark:text-gray-500 font-medium truncate">{label}</p>
+        <p className={`text-xl font-bold mt-0.5 truncate ${p.val}`}>{value}</p>
+        {sub && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">{sub}</p>}
       </div>
-    </Card>
+      {to && (
+        <ArrowRight
+          size={14}
+          className="ml-auto text-gray-300 dark:text-gray-600 group-hover:text-primary-400 transition-colors flex-shrink-0"
+        />
+      )}
+    </div>
   );
+
+  return to ? <Link to={to}>{inner}</Link> : inner;
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const user              = useAuthStore((s) => s.user);
-  const { data: groups, isLoading } = useGroups();
-
-  const activeGroups  = groups?.filter((g) => g.status === 'active')  ?? [];
-  const totalGroups   = groups?.length ?? 0;
+  const user            = useAuthStore((s) => s.user);
+  const { data: kpis, isLoading } = useDashboardKpis();
 
   if (isLoading) {
     return (
@@ -43,15 +67,21 @@ export default function DashboardPage() {
     );
   }
 
+  const c = kpis?.contributions;
+  const g = kpis?.groups;
+
   return (
     <div className="space-y-6">
+
       {/* Salutation */}
       <div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
           Bonjour, {user?.firstName} 👋
         </h2>
         <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
-          {new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })}
+          {new Date().toLocaleDateString('fr-FR', {
+            weekday: 'long', day: 'numeric', month: 'long',
+          })}
         </p>
       </div>
 
@@ -60,90 +90,75 @@ export default function DashboardPage() {
         <KpiCard
           icon={Users}
           label="Groupes actifs"
-          value={activeGroups.length}
-          sub={`${totalGroups} au total`}
+          value={g?.active ?? '—'}
+          sub={`${g?.total ?? 0} au total`}
           color="primary"
+          to="/groups"
         />
         <KpiCard
           icon={CreditCard}
-          label="Contributions ce mois"
-          value="—"
-          sub="Bientôt disponible"
+          label="Payé ce mois"
+          value={c ? formatCurrency(kpis.thisMonth.totalPaid) : '—'}
+          sub={`${c?.countPaid ?? 0} contribution${(c?.countPaid ?? 0) > 1 ? 's' : ''} soldées`}
           color="success"
+          to="/contributions"
         />
         <KpiCard
           icon={TrendingUp}
-          label="Total collecté"
-          value="—"
-          sub="Bientôt disponible"
+          label="Taux de complétion"
+          value={c ? `${c.completionRate}%` : '—'}
+          sub={`${c?.countPaid ?? 0} payées sur ${(c?.countPaid ?? 0) + (c?.countPending ?? 0) + (c?.countPartial ?? 0) + (c?.countLate ?? 0)}`}
           color="warning"
         />
         <KpiCard
-          icon={AlertCircle}
-          label="En attente"
-          value="—"
-          sub="Bientôt disponible"
-          color="danger"
+          icon={AlertTriangle}
+          label="En retard"
+          value={c ? (c.countLate > 0 ? c.countLate : '0') : '—'}
+          sub={c?.countLate > 0
+            ? `${formatCurrency(c.totalRemaining)} restant`
+            : 'Tout est à jour'}
+          color={c?.countLate > 0 ? 'danger' : 'success'}
+          to={c?.countLate > 0 ? '/contributions' : undefined}
         />
       </div>
 
-      {/* Groupes actifs */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Mes groupes
-          </h3>
+      {/* Alerte retards */}
+      {c?.countLate > 0 && (
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-danger-50 dark:bg-danger-500/10 border border-danger-100 dark:border-danger-500/20">
+          <AlertTriangle size={16} className="text-danger-500 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-danger-700 dark:text-danger-400">
+              {c.countLate} contribution{c.countLate > 1 ? 's' : ''} en retard
+            </p>
+            <p className="text-xs text-danger-600/70 dark:text-danger-400/70 mt-0.5">
+              Des pénalités s'accumulent. Régularisez dès que possible.
+            </p>
+          </div>
           <Link
-            to="/groups"
-            className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline"
+            to="/contributions"
+            className="text-xs font-semibold text-danger-600 dark:text-danger-400 hover:underline flex-shrink-0"
           >
-            Voir tout <ArrowRight size={12} />
+            Voir →
           </Link>
         </div>
+      )}
 
-        {groups?.length === 0 ? (
-          <Card className="text-center py-12">
-            <Users size={32} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Aucun groupe pour l'instant
-            </p>
-            <Link
-              to="/groups"
-              className="inline-block mt-4 text-sm text-primary-600 dark:text-primary-400 hover:underline"
-            >
-              Créer votre premier groupe →
-            </Link>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {groups.map((group) => (
-              <Link key={group._id} to={`/groups/${group._id}`}>
-                <Card hoverable>
-                  <Card.Header>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                        {group.name}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        {group.members?.length ?? 0} membre{group.members?.length > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <Badge variant={group.status === 'active' ? 'success' : 'neutral'}>
-                      {group.status === 'active' ? 'Actif' : group.status}
-                    </Badge>
-                  </Card.Header>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xs text-gray-400 dark:text-gray-500">Objectif</span>
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                      {formatCurrency(group.settings?.targetAmount ?? 0, group.settings?.currency)}
-                    </span>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
+      {/* Graphiques — 2 colonnes */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <MonthlyChart />
+        </div>
+        <div className="lg:col-span-1">
+          <StatusDonut />
+        </div>
       </div>
+
+      {/* Tableau dettes + historique — 2 colonnes */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <DebtTable />
+        <TransactionHistory title="Transactions récentes" />
+      </div>
+
     </div>
   );
 }
