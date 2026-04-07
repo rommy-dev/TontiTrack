@@ -93,11 +93,12 @@ export default function NotificationPanel({ onClose }) {
     <div
       ref={panelRef}
       className={cn(
-        'absolute right-0 top-full mt-2 z-50',
-        'w-96 max-h-[560px] flex flex-col',
+        'absolute right-0 top-full left-1/2 -translate-x-2/3 md:left-auto md:translate-x-0 mt-2 z-50',
+        'md:w-96 w-80 max-h-[560px] flex flex-col',
         'bg-white dark:bg-gray-900',
         'border border-gray-100 dark:border-gray-800',
         'rounded-2xl shadow-modal',
+        'transition-all duration-200 ease-in-out',
         'animate-fade-in overflow-hidden'
       )}
     >
