@@ -17,8 +17,8 @@ export default function AuthLayout() {
                 {/* Logo */}
                 <div className="relative z-10">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">T</span>
+                        <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden">
+                            <img src="/icon.svg" alt="TontiTrack" className="w-6 h-6" />
                         </div>
                         <span className="text-white font-semibold text-xl">TontiTrack</span>
                     </div>
@@ -64,8 +64,8 @@ export default function AuthLayout() {
                 {/* Topbar mobile */}
                 <div className="flex items-center justify-between p-4 lg:p-6">
                     <div className="flex items-center gap-2 lg:hidden">
-                        <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">T</span>
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+                            <img src="/icon.svg" alt="TontiTrack" className="w-5 h-5" />
                         </div>
                         <span className="font-semibold text-gray-800 dark:text-gray-100">
                             TontiTrack

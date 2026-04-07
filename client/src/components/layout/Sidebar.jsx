@@ -55,8 +55,8 @@ export default function Sidebar({ collapsed, onToggle, className }) {
             <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 dark:border-gray-800 relative">
                 {!collapsed && (
                     <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center flex-shrink-0">
-                            <TrendingUp size={16} className="text-white" />
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <img src="/icon.svg" alt="TontiTrack" className="w-5 h-5" />
                         </div>
                         <span className="font-bold text-gray-900 dark:text-gray-100 text-base">
                             TontiTrack
@@ -64,8 +64,8 @@ export default function Sidebar({ collapsed, onToggle, className }) {
                     </div>
                 )}
                 {collapsed && (
-                    <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center mx-auto">
-                        <TrendingUp size={16} className="text-white" />
+                    <div className="w-8 h-8 rounded-lg items-center justify-center mx-auto overflow-hidden">
+                        <img src="/icon.svg" alt="TontiTrack" className="w-5 h-5" />
                     </div>
                 )}
                 <button
