@@ -11,6 +11,7 @@ import ProgressBar        from '../../components/ui/ProgressBar.jsx';
 import PaymentModal       from '../../components/features/PaymentModal.jsx';
 import { SkeletonContributionCard } from '../../components/ui/Skeleton.jsx';
 import { formatCurrency, formatDate } from '../../lib/utils.js';
+import { MessageCircleWarning } from 'lucide-react';
 
 const STATUS_FILTERS = [
   { value: '',          label: 'Tous'        },
@@ -130,7 +131,17 @@ export default function ContributionsPage() {
 
 // ── Carte contribution ────────────────────────────────────────────────────────
 function ContributionCard({ contribution: c, onPay }) {
-  const canPay = ['pending', 'partial', 'late'].includes(c.status);
+  const PAYABLE_CONTRIBUTION_STATUSES = ['pending', 'partial', 'late'];
+  const PAYABLE_CYCLE_STATUSES        = ['active', 'pending'];
+
+  const cycleStatus = c.cycleId?.status;
+
+  const contributionIsPayable = PAYABLE_CONTRIBUTION_STATUSES.includes(c.status);
+  const cycleIsPayable        = PAYABLE_CYCLE_STATUSES.includes(cycleStatus);
+
+  const canPay    = contributionIsPayable && cycleIsPayable;
+  const cycleFailed = cycleStatus === 'failed'; 
+
   const remaining = c.expectedAmount - c.paidAmount;
   const currency  = c.groupId?.settings?.currency ?? 'XAF';
 
@@ -180,6 +191,15 @@ function ContributionCard({ contribution: c, onPay }) {
       )}
 
       {/* Action */}
+      {cycleFailed && contributionIsPayable && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            <MessageCircleWarning className="w-4 h-4 inline mr-1 text-warning-500" />
+            Cycle échoué — paiement non disponible
+          </span>
+        </div>
+      )}
+
       {canPay && (
         <Button
           size="sm"

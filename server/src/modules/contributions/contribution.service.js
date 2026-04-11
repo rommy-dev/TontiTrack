@@ -30,6 +30,16 @@ export const contributionService = {
     const cycle = await Cycle.findById(contribution.cycleId);
     const group = await Group.findById(contribution.groupId);
 
+    const PAYABLE_CYCLE_STATUSES = ['active', 'pending'];
+
+    if (!PAYABLE_CYCLE_STATUSES.includes(cycle.status)) {
+      throw new ValidationError(
+        `Impossible d'enregistrer un paiement : le cycle #${cycle.cycleNumber} ` +
+        `est actuellement "${cycle.status}". ` +
+        `Les paiements ne sont acceptés que pour les cycles actifs.`
+      );
+    }
+
     // Vérifier qu'on ne dépasse pas le montant dû
     const remaining = contribution.expectedAmount - contribution.paidAmount;
     if (amountCents > remaining) {
