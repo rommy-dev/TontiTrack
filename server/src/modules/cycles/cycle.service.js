@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Cycle }        from './cycle.model.js';
 import { Group }        from '../groups/group.model.js';
 import { Contribution } from '../contributions/contribution.model.js';
+import { Transaction } from '../transactions/transaction.model.js';
 import { NotFoundError, ForbiddenError, ValidationError } from '../../utils/ApiError.js';
 import { notificationService } from '../notifications/notification.service.js';
 
@@ -146,10 +147,55 @@ export const cycleService = {
         status:  { $nin: ['paid'] },
       });
 
-      cycle.status = unpaidCount === 0 ? 'completed' : 'failed';
+      const newStatus = unpaidCount === 0 ? 'completed' : 'failed';
+      cycle.status = newStatus;
       await cycle.save();
+
+      // Créer le payout si le cycle est complété
+      if (newStatus === 'completed' && cycle.beneficiaryId) {
+        await _createPayoutTransaction(cycle);
+      }
     }
 
     return expiredCycles.length;
   },
 };
+
+async function _createPayoutTransaction(cycle) {
+  // Le montant versé = somme de tout ce qui a été réellement collecté
+  const collected = await Contribution.aggregate([
+    { $match: { cycleId: cycle._id, status: 'paid' } },
+    { $group: { _id: null, total: { $sum: '$paidAmount' } } },
+  ]);
+
+  const totalCollected = collected[0]?.total ?? 0;
+  if (totalCollected === 0) return; // garde-fou : rien à verser
+
+  console.log(`💰 Création transaction payout pour ${cycle.beneficiaryId}, montant: ${totalCollected}`);
+
+  await Transaction.create({
+    groupId:     cycle.groupId,
+    userId:      cycle.beneficiaryId,   
+    type:        'payout',
+    amountCents: totalCollected,
+    currency:    cycle.currency,
+    referenceId: cycle._id,             
+    description: `Versement cycle #${cycle.cycleNumber}`,
+  });
+
+  console.log(`📢 Création notification payout_received pour ${cycle.beneficiaryId}`);
+
+  // Notifier le bénéficiaire
+  await notificationService.create({
+    userId:  cycle.beneficiaryId,
+    type:    'payout_received',
+    title:   'Versement reçu 🎉',
+    message: `Vous avez reçu le versement du cycle #${cycle.cycleNumber} : ${totalCollected / 100} ${cycle.currency}.`,
+    link:    `/groups/${cycle.groupId}`,
+    meta:    { cycleId: cycle._id, amountCents: totalCollected },
+  });
+
+  console.log(`✅ Payout et notification créés`);
+}
+
+export { _createPayoutTransaction };

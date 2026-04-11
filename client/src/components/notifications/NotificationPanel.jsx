@@ -71,12 +71,17 @@ function NotifItem({ notif, onRead }) {
 
 export default function NotificationPanel({ onClose }) {
   const panelRef = useRef(null);
-  const { data, isLoading } = useNotifications({ limit: 20 });
+  const { data, isLoading, refetch } = useNotifications({ limit: 20 });
   const { mutate: markRead }    = useMarkAsRead();
   const { mutate: markAll, isPending: markingAll } = useMarkAllAsRead();
 
   const notifications = data?.notifications ?? [];
   const unreadCount   = data?.unreadCount   ?? 0;
+
+  // Fetch fresh data when panel opens
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   // Fermer au clic hors du panneau
   useEffect(() => {

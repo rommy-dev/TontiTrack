@@ -10,6 +10,7 @@ const notificationSchema = new mongoose.Schema({
       'payment_confirmed',  // confirmation de paiement
       'cycle_started',      // nouveau cycle créé
       'cycle_completed',    // cycle terminé
+      'payout_received',    // versement reçu par le bénéficiaire
       'member_joined',      // nouveau membre dans le groupe
       'penalty_applied',    // pénalité appliquée
     ],

@@ -1,6 +1,7 @@
 import {
   AlertTriangle, CheckCircle,
   PlayCircle, Users, AlertCircle, Bell,
+  ArrowDownLeft,
 } from 'lucide-react';
 
 export const NOTIF_CONFIG = {
@@ -45,5 +46,11 @@ export const NOTIF_CONFIG = {
     color:   'text-warning-500',
     bg:      'bg-warning-50 dark:bg-warning-500/10',
     label:   'Pénalité',
+  },
+  payout_received: {
+    icon:    ArrowDownLeft,
+    color:   'text-success-500',
+    bg:      'bg-success-50 dark:bg-success-500/10',
+    label:   'Versement',
   },
 };

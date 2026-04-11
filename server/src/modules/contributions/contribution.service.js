@@ -8,6 +8,7 @@ import {
   NotFoundError, ForbiddenError, ValidationError
 } from '../../utils/ApiError.js';
 import { notificationService } from '../notifications/notification.service.js';
+import { _createPayoutTransaction } from '../cycles/cycle.service.js';
 
 export const contributionService = {
 
@@ -71,6 +72,7 @@ export const contributionService = {
 
     // ─── Session MongoDB : Contribution + Transaction en une seule opération ─
     const session = await mongoose.startSession();
+    let committed = false;
 
     try {
       session.startTransaction();
@@ -111,6 +113,7 @@ export const contributionService = {
       }
 
       await session.commitTransaction();
+      committed = true;
 
       // Notification de confirmation (hors session — pas critique)
       await notificationService.create({
@@ -135,7 +138,9 @@ export const contributionService = {
       return { success: true, newStatus, amountPaid: amountCents, penalty };
 
     } catch (err) {
-      await session.abortTransaction();
+      if (!committed) {
+        await session.abortTransaction();
+      }
       throw err;
     } finally {
       session.endSession();
@@ -144,12 +149,32 @@ export const contributionService = {
 
   // Vérifie si toutes les contributions d'un cycle sont payées
   async _tryCompleteCycle(cycleId) {
+    console.log(`🔍 Vérification completion cycle ${cycleId}`);
     const unpaid = await Contribution.countDocuments({
       cycleId,
       status: { $nin: ['paid'] },
     });
+    console.log(`📊 Contributions non payées: ${unpaid}`);
+    
     if (unpaid === 0) {
+      console.log(`✅ Toutes les contributions payées, completion du cycle ${cycleId}`);
       await Cycle.findByIdAndUpdate(cycleId, { status: 'completed' });
+
+      const completedCycle = await Cycle.findById(cycleId);
+      console.log(`🏆 Cycle complété:`, { 
+        cycleId, 
+        beneficiaryId: completedCycle?.beneficiaryId,
+        cycleNumber: completedCycle?.cycleNumber 
+      });
+      
+      if (completedCycle?.beneficiaryId) {
+        console.log(`💰 Création du versement pour le bénéficiaire ${completedCycle.beneficiaryId}`);
+        await _createPayoutTransaction(completedCycle);
+      } else {
+        console.log(`⚠️ Cycle ${cycleId} complété mais pas de bénéficiaire défini`);
+      }
+    } else {
+      console.log(`⏳ Cycle ${cycleId} pas encore complété (${unpaid} contributions en attente)`);
     }
   },
 

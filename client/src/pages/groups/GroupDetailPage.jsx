@@ -205,7 +205,8 @@ function CyclePanel({ groupId, currency }) {
     const { data: cycles, isLoading } = useGroupCycles(groupId);
 
     const activeCycle = cycles?.find((c) => c.status === 'active')
-        ?? cycles?.[0];
+        ?? cycles?.find((c) => c.status === 'pending')
+        ?? cycles?.slice(-1)[0]; // Prend le cycle le plus récent si aucun actif/en attente
 
     const { data: cycleData } = useCycle(groupId, activeCycle?._id);
 
