@@ -53,4 +53,13 @@ export const groupController = {
     const group = await groupService.activateGroup(req.params.groupId, req.user._id);
     res.json({ status: 'success', data: { group } });
   }),
+
+  update: catchAsync(async (req, res) => {
+    const group = await groupService.updateGroup(
+      req.params.groupId,
+      req.user._id,
+      req.body
+    );
+    res.json({ status: 'success', data: { group } });
+  }),
 };

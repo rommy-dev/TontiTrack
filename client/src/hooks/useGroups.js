@@ -74,3 +74,17 @@ export function useGroupCycles(groupId) {
     enabled:  !!groupId,
   });
 }
+
+export function useUpdateGroup(groupId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => groupsApi.update(groupId, data),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: groupKeys.detail(groupId) });
+      qc.invalidateQueries({ queryKey: groupKeys.all });
+      qc.invalidateQueries({ queryKey: dashboardKeys.kpis });
+      toast.success('Groupe mis à jour !');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Erreur mise à jour'),
+  });
+}

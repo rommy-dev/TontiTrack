@@ -121,4 +121,27 @@ export const groupService = {
     await group.save();
     return group;
   },
+
+  async updateGroup(groupId, adminId, updateData) {
+    const group = await Group.findById(groupId);
+    if (!group) throw new NotFoundError('Groupe');
+    if (!group.isAdmin(adminId)) throw new ForbiddenError('Action réservée à l\'admin du groupe');
+
+    // Mets à jour les champs autorisés
+    if (updateData.name !== undefined) {
+      group.name = updateData.name;
+    }
+    if (updateData.description !== undefined) {
+      group.description = updateData.description;
+    }
+    if (updateData.type !== undefined) {
+      group.type = updateData.type;
+    }
+    if (updateData.settings?.currency !== undefined) {
+      group.settings.currency = updateData.settings.currency;
+    }
+
+    await group.save();
+    return group;
+  },
 };

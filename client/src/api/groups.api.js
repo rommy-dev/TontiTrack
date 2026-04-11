@@ -4,6 +4,7 @@ export const groupsApi = {
   getAll:       ()           => api.get('/groups'),
   getById:      (id)         => api.get(`/groups/${id}`),
   create:       (data)       => api.post('/groups', data),
+  update:       (id, data)   => api.patch(`/groups/${id}`, data),
   addMember:    (id, data)   => api.post(`/groups/${id}/members`, data),
   removeMember: (id, uid)    => api.delete(`/groups/${id}/members/${uid}`),
   activate:     (id)         => api.patch(`/groups/${id}/activate`),

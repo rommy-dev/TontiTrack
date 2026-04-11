@@ -20,3 +20,13 @@ export const createGroupSchema = z.object({
 export const addMemberSchema = z.object({
   email: z.string().email(),
 });
+
+export const updateGroupSchema = z.object({
+  // Tous les champs sont optionnels pour une mise à jour partielle
+  name:        z.string().min(2).max(100).optional(),
+  description: z.string().max(500).optional(),
+  type:        z.enum(['tontine', 'caisse', 'epargne']).optional(),
+  settings: z.object({
+    currency: z.string().length(3).optional(),
+  }).optional(),
+}).strict(); // Reject unknown fields

@@ -1,8 +1,8 @@
 // src/pages/groups/GroupDetailPage.jsx
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { UserPlus, ChevronLeft, Users } from 'lucide-react';
-import { useGroup, useActivateGroup, useAddMember } from '../../hooks/useGroups.js';
+import { UserPlus, ChevronLeft, Users, Edit } from 'lucide-react';
+import { useGroup, useActivateGroup, useAddMember, useUpdateGroup } from '../../hooks/useGroups.js';
 import { useGroupCycles, useCreateCycle, useCycle } from '../../hooks/useCycles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import Card from '../../components/ui/Card.jsx';
@@ -112,6 +112,129 @@ function CreateCycleModal({ group, onClose }) {
                         </Button>
                         <Button type="submit" fullWidth loading={isPending}>
                             Créer le cycle
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ── Modal d'édition du groupe ────────────────────────────────────────────────
+function EditGroupModal({ group, onClose }) {
+    const [form, setForm] = useState({
+        name: group.name || '',
+        description: group.description || '',
+        type: group.type || 'tontine',
+        settings: {
+            currency: group.settings?.currency || 'XAF',
+        },
+    });
+    const [errors, setErrors] = useState({});
+    const { mutate: update, isPending } = useUpdateGroup(group._id);
+
+    function validate() {
+        const errs = {};
+        if (!form.name || form.name.length < 2) errs.name = 'Le nom doit contenir au moins 2 caractères';
+        if (form.description && form.description.length > 500) errs.description = 'La description ne doit pas dépasser 500 caractères';
+        if (!form.type) errs.type = 'Le type est requis';
+        setErrors(errs);
+        return Object.keys(errs).length === 0;
+    }
+
+    function handleSubmit(e) {
+        e.preventDefault();
+        if (!validate()) return;
+
+        update(form, {
+            onSuccess: () => onClose(),
+        });
+    }
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 !m-0 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-modal w-full max-w-lg animate-fade-in">
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        Modifier le groupe
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        ✕
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <Input
+                        label="Nom du groupe"
+                        value={form.name}
+                        onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+                        error={errors.name}
+                        required
+                    />
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                            Description
+                        </label>
+                        <textarea
+                            value={form.description}
+                            onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))}
+                            className="input resize-none h-20"
+                            placeholder="Décrivez brièvement ce groupe..."
+                        />
+                        {errors.description && (
+                            <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.description}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                            Type de groupe *
+                        </label>
+                        <select
+                            value={form.type}
+                            onChange={(e) => setForm((s) => ({ ...s, type: e.target.value }))}
+                            className="input"
+                        >
+                            <option value="tontine">Tontine</option>
+                            <option value="caisse">Caisse</option>
+                            <option value="epargne">Épargne</option>
+                        </select>
+                        {errors.type && (
+                            <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.type}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                            Devise *
+                        </label>
+                        <select
+                            value={form.settings.currency}
+                            onChange={(e) => setForm((s) => ({
+                                ...s,
+                                settings: { ...s.settings, currency: e.target.value }
+                            }))}
+                            className="input"
+                        >
+                            <option value="XAF">XAF (Franc CFA)</option>
+                            <option value="USD">USD (Dollar US)</option>
+                            <option value="EUR">EUR (Euro)</option>
+                            <option value="GBP">GBP (Livre Sterling)</option>
+                            <option value="CHF">CHF (Franc Suisse)</option>
+                            <option value="CAD">CAD (Dollar Canadien)</option>
+                        </select>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <Button type="button" variant="secondary" fullWidth onClick={onClose}>
+                            Annuler
+                        </Button>
+                        <Button type="submit" fullWidth loading={isPending}>
+                            Mettre à jour
                         </Button>
                     </div>
                 </form>
@@ -297,6 +420,7 @@ export default function GroupDetailPage() {
     const { mutate: activateGroup } = useActivateGroup();
     const { mutate: createCycle } = useCreateCycle(groupId);
     const [showCreateCycleModal, setShowCreateCycleModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const user = useAuthStore((s) => s.user);
 
     // Vérifier si l'utilisateur connecté est admin du groupe
@@ -332,7 +456,7 @@ export default function GroupDetailPage() {
                     <ChevronLeft size={14} /> Mes groupes
                 </Link>
 
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                             {group.name}
@@ -346,6 +470,17 @@ export default function GroupDetailPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
+                        {isGroupAdmin && (
+                            <Button 
+                                size="sm" 
+                                className="text-gray-500 bg-gray-100 hover:text-gray-700 hover:bg-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                                variant="ghost"
+                                leftIcon={<Edit size={14} />} 
+                                onClick={() => setShowEditModal(true)}
+                            >
+                                Modifier
+                            </Button>
+                        )}
                         {group.status === 'draft' && isGroupAdmin && (
                             <Button size="sm" variant="success" onClick={() => activateGroup(groupId)}>
                                 Activer le groupe
@@ -383,6 +518,9 @@ export default function GroupDetailPage() {
             </div>
             {showCreateCycleModal && (
                 <CreateCycleModal group={group} onClose={() => setShowCreateCycleModal(false)} />
+            )}
+            {showEditModal && (
+                <EditGroupModal group={group} onClose={() => setShowEditModal(false)} />
             )}
         </div>
     );
