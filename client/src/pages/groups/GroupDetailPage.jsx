@@ -1,8 +1,8 @@
 // src/pages/groups/GroupDetailPage.jsx
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { UserPlus, ChevronLeft, Users, Edit } from 'lucide-react';
-import { useGroup, useActivateGroup, useAddMember, useUpdateGroup } from '../../hooks/useGroups.js';
+import { UserPlus, ChevronLeft, Users, Edit, UserCog, Pause, Play, Archive } from 'lucide-react';
+import { useGroup, useActivateGroup, useAddMember, useUpdateGroup, useTransferAdmin, useUpdateGroupStatus } from '../../hooks/useGroups.js';
 import { useGroupCycles, useCreateCycle, useCycle } from '../../hooks/useCycles.js';
 import { useAuthStore } from '../../store/authStore.js';
 import Card from '../../components/ui/Card.jsx';
@@ -349,6 +349,239 @@ function EditGroupModal({ group, onClose }) {
     );
 }
 
+// ── Modal de transfert d'admin ───────────────────────────────────────────────
+function TransferAdminModal({ group, onClose }) {
+    const [selectedUserId, setSelectedUserId] = useState('');
+    const [errors, setErrors] = useState({});
+    const { mutate: transfer, isPending } = useTransferAdmin(group._id);
+
+    function validate() {
+        const errs = {};
+        if (!selectedUserId) errs.userId = 'Veuillez sélectionner un nouveau administrateur';
+        setErrors(errs);
+        return Object.keys(errs).length === 0;
+    }
+
+    function handleSubmit(e) {
+        e.preventDefault();
+        if (!validate()) return;
+
+        transfer({ newAdminId: selectedUserId }, {
+            onSuccess: () => onClose(),
+        });
+    }
+
+    const activeMembers = group.members?.filter(m => m.status === 'active') || [];
+    const nonAdminMembers = activeMembers.filter(m => m.role !== 'admin');
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 !m-0 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-modal w-full max-w-lg animate-fade-in">
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        Transférer le rôle d'administrateur
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        ✕
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Sélectionnez le membre qui deviendra le nouvel administrateur.
+                            Vous perdrez vos droits d'administration.
+                        </p>
+
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                            Nouveau administrateur *
+                        </label>
+                        <select
+                            value={selectedUserId}
+                            onChange={(e) => setSelectedUserId(e.target.value)}
+                            className="input"
+                        >
+                            <option value="">Choisir un membre...</option>
+                            {nonAdminMembers.map((m) => (
+                                <option key={m.userId._id} value={m.userId._id}>
+                                    {m.userId.firstName} {m.userId.lastName}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.userId && (
+                            <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.userId}</p>
+                        )}
+                    </div>
+
+                    <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg p-3">
+                        <p className="text-xs text-amber-800 dark:text-amber-200">
+                            ⚠️ Cette action est irréversible. Vous ne pourrez plus modifier les paramètres du groupe.
+                        </p>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                        <Button type="button" variant="secondary" fullWidth onClick={onClose}>
+                            Annuler
+                        </Button>
+                        <Button
+                            type="submit"
+                            fullWidth
+                            loading={isPending}
+                            disabled={!selectedUserId}
+                        >
+                            Transférer
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ── Modal de gestion du statut ───────────────────────────────────────────────
+function UpdateStatusModal({ group, onClose }) {
+    const [selectedStatus, setSelectedStatus] = useState(group.status);
+    const [reason, setReason] = useState('');
+    const [errors, setErrors] = useState({});
+    const { mutate: updateStatus, isPending } = useUpdateGroupStatus(group._id);
+
+    const statusOptions = [
+        { value: 'active', label: 'Actif', description: 'Le groupe fonctionne normalement', icon: Play },
+        { value: 'paused', label: 'En pause', description: 'Temporairement suspendu', icon: Pause },
+        { value: 'completed', label: 'Terminé', description: 'Archivé définitivement', icon: Archive },
+    ];
+
+    function validate() {
+        const errs = {};
+        if (!selectedStatus) errs.status = 'Veuillez sélectionner un statut';
+        if (selectedStatus === 'completed' && !reason.trim()) {
+            errs.reason = 'Une raison est requise pour archiver le groupe';
+        }
+        setErrors(errs);
+        return Object.keys(errs).length === 0;
+    }
+
+    function handleSubmit(e) {
+        e.preventDefault();
+        if (!validate()) return;
+
+        updateStatus({
+            status: selectedStatus,
+            reason: reason.trim() || undefined
+        }, {
+            onSuccess: () => onClose(),
+        });
+    }
+
+    const currentOption = statusOptions.find(opt => opt.value === group.status);
+    const selectedOption = statusOptions.find(opt => opt.value === selectedStatus);
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 !m-0 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-modal w-full max-w-lg animate-fade-in">
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                        Modifier le statut du groupe
+                    </h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        ✕
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            Statut actuel: <span className="font-medium">{currentOption?.label}</span>
+                        </p>
+
+                        <div className="space-y-2">
+                            {statusOptions.map((option) => {
+                                const Icon = option.icon;
+                                const isCurrent = option.value === group.status;
+                                const isSelected = option.value === selectedStatus;
+
+                                return (
+                                    <label
+                                        key={option.value}
+                                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                                            isSelected
+                                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-500/10'
+                                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="status"
+                                            value={option.value}
+                                            checked={isSelected}
+                                            onChange={(e) => setSelectedStatus(e.target.value)}
+                                            className="text-primary-600 focus:ring-primary-500"
+                                        />
+                                        <Icon size={16} className="text-gray-400" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                {option.label}
+                                                {isCurrent && (
+                                                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                                        (actuel)
+                                                    </span>
+                                                )}
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {option.description}
+                                            </p>
+                                        </div>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        {errors.status && (
+                            <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.status}</p>
+                        )}
+                    </div>
+
+                    {selectedStatus === 'completed' && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                                Raison de l'archivage *
+                            </label>
+                            <textarea
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                className="input resize-none h-20"
+                                placeholder="Expliquez pourquoi ce groupe est terminé..."
+                            />
+                            {errors.reason && (
+                                <p className="text-xs text-red-500 dark:text-red-400 mt-1">{errors.reason}</p>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="flex gap-3 pt-2">
+                        <Button type="button" variant="secondary" fullWidth onClick={onClose}>
+                            Annuler
+                        </Button>
+                        <Button
+                            type="submit"
+                            fullWidth
+                            loading={isPending}
+                            disabled={selectedStatus === group.status}
+                        >
+                            Mettre à jour
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 // ── Panneau membres ───────────────────────────────────────────────────────────
 function MembersPanel({ group, isGroupAdmin }) {
     if (!group.members) return <SkeletonMembersList />;
@@ -527,6 +760,8 @@ export default function GroupDetailPage() {
     const { mutate: createCycle } = useCreateCycle(groupId);
     const [showCreateCycleModal, setShowCreateCycleModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showTransferAdminModal, setShowTransferAdminModal] = useState(false);
+    const [showStatusModal, setShowStatusModal] = useState(false);
     const user = useAuthStore((s) => s.user);
 
     // Vérifier si l'utilisateur connecté est admin du groupe
@@ -577,16 +812,49 @@ export default function GroupDetailPage() {
 
                     <div className="flex items-center gap-2 flex-shrink-0">
                         {isGroupAdmin && (
-                            <Button 
-                                size="sm" 
-                                className="text-gray-500 bg-gray-100 hover:text-gray-700 hover:bg-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:hover:text-gray-300 dark:hover:bg-gray-700"
-                                variant="ghost"
-                                leftIcon={<Edit size={14} />} 
-                                onClick={() => setShowEditModal(true)}
-                            >
-                                Modifier
-                            </Button>
+                            <>
+                                <Button
+                                    size="sm"
+                                    className="text-gray-500 bg-gray-100 hover:text-gray-700 hover:bg-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                                    variant="ghost"
+                                    leftIcon={<Edit size={14} />}
+                                    onClick={() => setShowEditModal(true)}
+                                >
+                                    Modifier
+                                </Button>
+
+                                {group.status !== 'completed' && (
+                                    <>
+                                        <Button
+                                            size="sm"
+                                            className="text-gray-500 bg-gray-100 hover:text-gray-700 hover:bg-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                                            variant="ghost"
+                                            leftIcon={<UserCog size={14} />}
+                                            onClick={() => setShowTransferAdminModal(true)}
+                                        >
+                                            Transférer admin
+                                        </Button>
+
+                                        <Button
+                                            size="sm"
+                                            className="text-gray-500 bg-gray-100 hover:text-gray-700 hover:bg-gray-200 dark:text-gray-400 dark:bg-gray-800 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                                            variant="ghost"
+                                            leftIcon={
+                                                group.status === 'paused' ? <Play size={14} /> :
+                                                group.status === 'active' ? <Pause size={14} /> :
+                                                <Archive size={14} />
+                                            }
+                                            onClick={() => setShowStatusModal(true)}
+                                        >
+                                            {group.status === 'paused' ? 'Réactiver' :
+                                             group.status === 'active' ? 'Mettre en pause' :
+                                             'Archiver'}
+                                        </Button>
+                                    </>
+                                )}
+                            </>
                         )}
+
                         {group.status === 'draft' && isGroupAdmin && (
                             <Button size="sm" variant="success" onClick={() => activateGroup(groupId)}>
                                 Activer le groupe
@@ -627,6 +895,12 @@ export default function GroupDetailPage() {
             )}
             {showEditModal && (
                 <EditGroupModal group={group} onClose={() => setShowEditModal(false)} />
+            )}
+            {showTransferAdminModal && (
+                <TransferAdminModal group={group} onClose={() => setShowTransferAdminModal(false)} />
+            )}
+            {showStatusModal && (
+                <UpdateStatusModal group={group} onClose={() => setShowStatusModal(false)} />
             )}
         </div>
     );

@@ -36,3 +36,12 @@ export const updateGroupSchema = z.object({
     currency:        z.string().length(3).optional(),
   }).optional(),
 }).strict(); // Reject unknown fields
+
+export const transferAdminSchema = z.object({
+  newAdminId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'ID utilisateur invalide'),
+}).strict();
+
+export const updateStatusSchema = z.object({
+  status: z.enum(['active', 'paused', 'completed']),
+  reason: z.string().max(500).optional(), // Pour expliquer le changement de statut
+}).strict();

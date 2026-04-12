@@ -88,3 +88,37 @@ export function useUpdateGroup(groupId) {
     onError: (err) => toast.error(err.response?.data?.message || 'Erreur mise à jour'),
   });
 }
+
+export function useTransferAdmin(groupId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => groupsApi.transferAdmin(groupId, data),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: groupKeys.detail(groupId) });
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Rôle d\'administrateur transféré !');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Erreur lors du transfert'),
+  });
+}
+
+export function useUpdateGroupStatus(groupId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => groupsApi.updateStatus(groupId, data),
+    onSuccess:  (data) => {
+      qc.invalidateQueries({ queryKey: groupKeys.detail(groupId) });
+      qc.invalidateQueries({ queryKey: groupKeys.all });
+      qc.invalidateQueries({ queryKey: dashboardKeys.kpis });
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+
+      const statusMessages = {
+        paused: 'Groupe mis en pause',
+        active: 'Groupe réactivé',
+        completed: 'Groupe archivé'
+      };
+      toast.success(statusMessages[data.status] || 'Statut mis à jour');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Erreur mise à jour statut'),
+  });
+}

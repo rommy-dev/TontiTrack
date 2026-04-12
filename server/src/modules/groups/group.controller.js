@@ -68,4 +68,23 @@ export const groupController = {
     );
     res.json({ status: 'success', data: { group } });
   }),
+
+  transferAdmin: catchAsync(async (req, res) => {
+    const group = await groupService.transferAdminRole(
+      req.params.groupId,
+      req.user._id,
+      req.body.newAdminId
+    );
+    res.json({ status: 'success', data: { group } });
+  }),
+
+  updateStatus: catchAsync(async (req, res) => {
+    const group = await groupService.updateGroupStatus(
+      req.params.groupId,
+      req.user._id,
+      req.body.status,
+      req.body.reason
+    );
+    res.json({ status: 'success', data: { group } });
+  }),
 };

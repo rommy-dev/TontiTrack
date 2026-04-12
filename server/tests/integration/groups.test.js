@@ -244,4 +244,160 @@ describe('Groups API', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe('PATCH /api/groups/:groupId/admin', () => {
+    let groupId, secondUserToken, secondUserId;
+
+    beforeEach(async () => {
+      // Créer un groupe
+      const groupRes = await request(app)
+        .post('/api/groups')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Groupe Test',
+          type: 'tontine',
+          settings: { targetAmount: 50000, currency: 'XAF' }
+        });
+      groupId = groupRes.body.data.group._id;
+
+      // Créer un second user et l'ajouter au groupe
+      ({ token: secondUserToken, userId: secondUserId } = await createUserAndLogin('second@test.com'));
+      await request(app)
+        .post(`/api/groups/${groupId}/members`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'second@test.com' });
+    });
+
+    it('transfère le rôle admin avec succès', async () => {
+      const res = await request(app)
+        .patch(`/api/groups/${groupId}/admin`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ newAdminId: secondUserId });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.group.members).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ userId: expect.any(String), role: 'member' }),
+          expect.objectContaining({ userId: secondUserId, role: 'admin' })
+        ])
+      );
+    });
+
+    it('retourne 403 si l\'utilisateur n\'est pas admin', async () => {
+      const res = await request(app)
+        .patch(`/api/groups/${groupId}/admin`)
+        .set('Authorization', `Bearer ${secondUserToken}`)
+        .send({ newAdminId: '507f1f77bcf86cd799439011' }); // ID valide mais pas membre
+
+      expect(res.status).toBe(403);
+    });
+
+    it('retourne 400 si le nouveau admin n\'est pas membre actif', async () => {
+      const fakeId = '507f1f77bcf86cd799439011';
+      const res = await request(app)
+        .patch(`/api/groups/${groupId}/admin`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ newAdminId: fakeId });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('PATCH /api/groups/:groupId/status', () => {
+    let groupId;
+
+    beforeEach(async () => {
+      // Créer un groupe
+      const groupRes = await request(app)
+        .post('/api/groups')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Groupe Test',
+          type: 'tontine',
+          settings: { targetAmount: 50000, currency: 'XAF' }
+        });
+      groupId = groupRes.body.data.group._id;
+
+      // Ajouter un second membre
+      const { token: secondToken } = await createUserAndLogin('member@test.com');
+      await request(app)
+        .post(`/api/groups/${groupId}/members`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ email: 'member@test.com' });
+
+      // L'activer
+      await request(app)
+        .patch(`/api/groups/${groupId}/activate`)
+        .set('Authorization', `Bearer ${token}`);
+    });
+
+    it('met le groupe en pause', async () => {
+      const res = await request(app)
+        .patch(`/api/groups/${groupId}/status`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'paused', reason: 'Pause temporaire' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.group.status).toBe('paused');
+    });
+
+    it('réactive le groupe', async () => {
+      // D'abord mettre en pause
+      await request(app)
+        .patch(`/api/groups/${groupId}/status`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'paused' });
+
+      // Puis réactiver
+      const res = await request(app)
+        .patch(`/api/groups/${groupId}/status`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'active' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.group.status).toBe('active');
+    });
+
+    it('archive le groupe', async () => {
+      const res = await request(app)
+        .patch(`/api/groups/${groupId}/status`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'completed', reason: 'Groupe terminé' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.group.status).toBe('completed');
+    });
+
+    it('retourne 400 pour une transition invalide', async () => {
+      // Créer un nouveau groupe draft
+      const draftGroupRes = await request(app)
+        .post('/api/groups')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          name: 'Draft Group',
+          type: 'tontine',
+          settings: { targetAmount: 50000, currency: 'XAF' }
+        });
+      const draftGroupId = draftGroupRes.body.data.group._id;
+
+      // Essayer de mettre en pause un groupe draft (invalide)
+      const res = await request(app)
+        .patch(`/api/groups/${draftGroupId}/status`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ status: 'paused' });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('retourne 403 si l\'utilisateur n\'est pas admin', async () => {
+      const { token: otherToken } = await createUserAndLogin('other@test.com');
+
+      const res = await request(app)
+        .patch(`/api/groups/${groupId}/status`)
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send({ status: 'paused' });
+
+      expect(res.status).toBe(403);
+    });
+  });
 });

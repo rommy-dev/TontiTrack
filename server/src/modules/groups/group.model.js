@@ -48,6 +48,35 @@ groupSchema.methods.isAdmin = function (userId) {
   );
 };
 
+// Transfère le rôle admin à un autre membre
+groupSchema.methods.transferAdminRole = function (currentAdminId, newAdminId) {
+  // Vérifier que le nouveau admin est membre actif
+  const newAdminMember = this.members.find(
+    m => m.userId.equals(newAdminId) && m.status === 'active'
+  );
+  if (!newAdminMember) {
+    throw new Error('Le nouveau admin doit être un membre actif du groupe');
+  }
+
+  // Empêcher l'auto-transfert
+  if (currentAdminId.toString() === newAdminId.toString()) {
+    throw new Error('Impossible de se transférer le rôle à soi-même');
+  }
+
+  // Transférer le rôle
+  const currentAdminMember = this.members.find(
+    m => m.userId.equals(currentAdminId) && m.role === 'admin'
+  );
+  const targetMember = this.members.find(
+    m => m.userId.equals(newAdminId)
+  );
+
+  if (currentAdminMember) currentAdminMember.role = 'member';
+  if (targetMember) targetMember.role = 'admin';
+
+  return this;
+};
+
 // Retourne le montant attendu pour un userId donné
 groupSchema.methods.getMemberContribution = function (userId) {
   const member = this.members.find(m => m.userId.equals(userId));

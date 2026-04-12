@@ -13,6 +13,11 @@ const notificationSchema = new mongoose.Schema({
       'payout_received',    // versement reçu par le bénéficiaire
       'member_joined',      // nouveau membre dans le groupe
       'penalty_applied',    // pénalité appliquée
+      'admin_role_transferred', // rôle admin transféré (ancien admin)
+      'admin_role_received',    // rôle admin reçu (nouveau admin)
+      'group_paused',       // groupe mis en pause
+      'group_reactivated',  // groupe réactivé
+      'group_completed',    // groupe archivé
     ],
     required: true,
   },
