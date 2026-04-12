@@ -137,8 +137,26 @@ export const groupService = {
     if (updateData.type !== undefined) {
       group.type = updateData.type;
     }
-    if (updateData.settings?.currency !== undefined) {
-      group.settings.currency = updateData.settings.currency;
+    if (updateData.settings) {
+      // Mise à jour des paramètres financiers
+      if (updateData.settings.targetAmount !== undefined) {
+        group.settings.targetAmount = updateData.settings.targetAmount;
+      }
+      if (updateData.settings.frequency !== undefined) {
+        group.settings.frequency = updateData.settings.frequency;
+      }
+      if (updateData.settings.penaltyRate !== undefined) {
+        group.settings.penaltyRate = updateData.settings.penaltyRate;
+      }
+      if (updateData.settings.gracePeriodDays !== undefined) {
+        group.settings.gracePeriodDays = updateData.settings.gracePeriodDays;
+      }
+      if (updateData.settings.allowPartialPay !== undefined) {
+        group.settings.allowPartialPay = updateData.settings.allowPartialPay;
+      }
+      if (updateData.settings.currency !== undefined) {
+        group.settings.currency = updateData.settings.currency;
+      }
     }
 
     await group.save();

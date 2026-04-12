@@ -55,10 +55,16 @@ export const groupController = {
   }),
 
   update: catchAsync(async (req, res) => {
+    // Convertir targetAmount en centimes si fourni (comme pour la création)
+    const updateData = { ...req.body };
+    if (updateData.settings?.targetAmount !== undefined) {
+      updateData.settings.targetAmount = updateData.settings.targetAmount * 100;
+    }
+
     const group = await groupService.updateGroup(
       req.params.groupId,
       req.user._id,
-      req.body
+      updateData
     );
     res.json({ status: 'success', data: { group } });
   }),

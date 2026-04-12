@@ -27,6 +27,12 @@ export const updateGroupSchema = z.object({
   description: z.string().max(500).optional(),
   type:        z.enum(['tontine', 'caisse', 'epargne']).optional(),
   settings: z.object({
-    currency: z.string().length(3).optional(),
+    // targetAmount : utilisateur envoie des unités entières, conversion en centimes côté serveur
+    targetAmount:    z.number().int().positive().optional(),
+    frequency:       z.enum(['weekly', 'biweekly', 'monthly']).optional(),
+    penaltyRate:     z.number().min(0).max(1).optional(),
+    gracePeriodDays: z.number().int().min(0).max(30).optional(),
+    allowPartialPay: z.boolean().optional(),
+    currency:        z.string().length(3).optional(),
   }).optional(),
 }).strict(); // Reject unknown fields

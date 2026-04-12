@@ -127,6 +127,11 @@ function EditGroupModal({ group, onClose }) {
         description: group.description || '',
         type: group.type || 'tontine',
         settings: {
+            targetAmount: group.settings?.targetAmount ? group.settings.targetAmount / 100 : '', // Convertir centimes en unités
+            frequency: group.settings?.frequency || 'monthly',
+            penaltyRate: group.settings?.penaltyRate ? (group.settings.penaltyRate * 100) : 5, // Convertir en pourcentage
+            gracePeriodDays: group.settings?.gracePeriodDays || 3,
+            allowPartialPay: group.settings?.allowPartialPay ?? true,
             currency: group.settings?.currency || 'XAF',
         },
     });
@@ -138,6 +143,15 @@ function EditGroupModal({ group, onClose }) {
         if (!form.name || form.name.length < 2) errs.name = 'Le nom doit contenir au moins 2 caractères';
         if (form.description && form.description.length > 500) errs.description = 'La description ne doit pas dépasser 500 caractères';
         if (!form.type) errs.type = 'Le type est requis';
+        if (!form.settings.targetAmount || form.settings.targetAmount <= 0) {
+            errs.targetAmount = 'Le montant cible doit être positif';
+        }
+        if (form.settings.penaltyRate < 0 || form.settings.penaltyRate > 100) {
+            errs.penaltyRate = 'Le taux de pénalité doit être entre 0 et 100%';
+        }
+        if (form.settings.gracePeriodDays < 0 || form.settings.gracePeriodDays > 30) {
+            errs.gracePeriodDays = 'La période de grâce doit être entre 0 et 30 jours';
+        }
         setErrors(errs);
         return Object.keys(errs).length === 0;
     }
@@ -146,7 +160,16 @@ function EditGroupModal({ group, onClose }) {
         e.preventDefault();
         if (!validate()) return;
 
-        update(form, {
+        // Convertir les valeurs pour l'API
+        const submitData = {
+            ...form,
+            settings: {
+                ...form.settings,
+                penaltyRate: form.settings.penaltyRate / 100, // Convertir pourcentage en décimal
+            }
+        };
+
+        update(submitData, {
             onSuccess: () => onClose(),
         });
     }
@@ -227,6 +250,89 @@ function EditGroupModal({ group, onClose }) {
                             <option value="CHF">CHF (Franc Suisse)</option>
                             <option value="CAD">CAD (Dollar Canadien)</option>
                         </select>
+                    </div>
+
+                    <div className="border-t border-gray-100 dark:border-gray-800 pt-4 mt-4">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                            Paramètres Financiers
+                        </h3>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input
+                                label="Montant cible"
+                                type="number"
+                                value={form.settings.targetAmount}
+                                onChange={(e) => setForm((s) => ({
+                                    ...s,
+                                    settings: { ...s.settings, targetAmount: parseInt(e.target.value) || '' }
+                                }))}
+                                error={errors.targetAmount}
+                                required
+                                min="1"
+                            />
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1.5">
+                                    Fréquence *
+                                </label>
+                                <select
+                                    value={form.settings.frequency}
+                                    onChange={(e) => setForm((s) => ({
+                                        ...s,
+                                        settings: { ...s.settings, frequency: e.target.value }
+                                    }))}
+                                    className="input"
+                                >
+                                    <option value="weekly">Hebdomadaire</option>
+                                    <option value="biweekly">Bi-mensuel</option>
+                                    <option value="monthly">Mensuel</option>
+                                </select>
+                            </div>
+
+                            <Input
+                                label="Taux de pénalité (%)"
+                                type="number"
+                                value={form.settings.penaltyRate}
+                                onChange={(e) => setForm((s) => ({
+                                    ...s,
+                                    settings: { ...s.settings, penaltyRate: parseFloat(e.target.value) || 0 }
+                                }))}
+                                error={errors.penaltyRate}
+                                min="0"
+                                max="100"
+                                step="0.1"
+                            />
+
+                            <Input
+                                label="Période de grâce (jours)"
+                                type="number"
+                                value={form.settings.gracePeriodDays}
+                                onChange={(e) => setForm((s) => ({
+                                    ...s,
+                                    settings: { ...s.settings, gracePeriodDays: parseInt(e.target.value) || 0 }
+                                }))}
+                                error={errors.gracePeriodDays}
+                                min="0"
+                                max="30"
+                            />
+                        </div>
+
+                        <div className="mt-4">
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={form.settings.allowPartialPay}
+                                    onChange={(e) => setForm((s) => ({
+                                        ...s,
+                                        settings: { ...s.settings, allowPartialPay: e.target.checked }
+                                    }))}
+                                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                                />
+                                <span className="text-sm text-gray-700 dark:text-gray-200">
+                                    Autoriser les paiements partiels
+                                </span>
+                            </label>
+                        </div>
                     </div>
 
                     <div className="flex gap-3 pt-2">
