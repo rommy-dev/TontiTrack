@@ -5,7 +5,7 @@
     "start": "node src/server.js",
     "test": "cross-env NODE_ENV=test jest --runInBand --forceExit",
     "test:watch": "cross-env NODE_ENV=test jest --watch --runInBand",
-    "test:unit":  "cross-env NODE_ENV=test jest tests/unit --runInBand",
+    "test:unit": "cross-env NODE_ENV=test jest tests/unit --runInBand",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write src/"
@@ -41,6 +41,7 @@
     "babel-jest": "^30.3.0",
     "cross-env": "^10.1.0",
     "mongodb-memory-server": "^11.0.1",
+    "nodemon": "^3.1.14",
     "supertest": "^6.3.3"
   }
 }
