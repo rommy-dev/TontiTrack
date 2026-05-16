@@ -37,6 +37,15 @@ export const dashboardService = {
           countPartial:  { $sum: { $cond: [{ $eq: ['$status', 'partial']  }, 1, 0] } },
           countLate:     { $sum: { $cond: [{ $eq: ['$status', 'late']     }, 1, 0] } },
           countPaid:     { $sum: { $cond: [{ $eq: ['$status', 'paid']     }, 1, 0] } },
+          totalLateRemaining: {
+            $sum: {
+              $cond: [
+                { $eq: ['$status', 'late'] },
+                { $subtract: ['$expectedAmount', '$paidAmount'] },
+                0,
+              ],
+            },
+          },
           totalPenalty:  { $sum: '$penaltyAmount' },
         }},
       ]),
@@ -59,8 +68,8 @@ export const dashboardService = {
     const g  = groupsData[0]        ?? { total: 0, active: 0 };
     const c  = contributionsData[0] ?? {
       totalExpected: 0, totalPaid: 0,
-      countPending: 0, countPartial: 0,
-      countLate: 0, countPaid: 0, totalPenalty: 0,
+      countPending: 0, countPartial: 0, countLate: 0, countPaid: 0,
+      totalLateRemaining: 0, totalPenalty: 0,
     };
     const tx = transactionsData[0]  ?? { totalThisMonth: 0 };
 
@@ -75,6 +84,7 @@ export const dashboardService = {
         totalExpected:  c.totalExpected,
         totalPaid:      c.totalPaid,
         totalRemaining: Math.max(0, c.totalExpected - c.totalPaid),
+        totalLateRemaining: c.totalLateRemaining,
         totalPenalty:   c.totalPenalty,
         countPending:   c.countPending,
         countPartial:   c.countPartial,
@@ -142,7 +152,6 @@ export const dashboardService = {
   // Répartition des statuts — pour le graphique camembert
   async getContributionStatusBreakdown(userId) {
     const uid = new mongoose.Types.ObjectId(userId);
-    const now = new Date();
 
     const data = await Contribution.aggregate([
       { $match: { userId: uid } },
@@ -163,12 +172,7 @@ export const dashboardService = {
                 $and: [
                   { $ne: ['$status', 'paid'] },
                   { $lt: ['$paidAmount', '$expectedAmount'] },
-                  {
-                    $or: [
-                      { $eq: ['$cycle.status', 'failed'] },
-                      { $lt: ['$cycle.dueDate', now] },
-                    ],
-                  },
+                  { $eq: ['$cycle.status', 'failed'] },
                 ],
               },
               'defaulted',

@@ -21,15 +21,11 @@ const STATUS_FILTERS = [
 ];
 
 function getEffectiveContributionStatus(contribution) {
-  const cycle = contribution.cycleId;
-  const cycleDueDate = cycle?.dueDate ? new Date(cycle.dueDate) : null;
-  const cycleEnded =
-    ['completed', 'failed'].includes(cycle?.status) ||
-    (cycleDueDate && cycleDueDate < new Date());
-
   const isFullyPaid = contribution.paidAmount >= contribution.expectedAmount;
 
-  if (!isFullyPaid && cycleEnded) return 'defaulted';
+  if (contribution.status === 'paid') return 'paid';
+  if (!isFullyPaid && contribution.cycleId?.status === 'failed') return 'defaulted';
+
   return contribution.status;
 }
 

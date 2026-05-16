@@ -2,11 +2,19 @@ import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '../api/dashboard.api.js';
 
 export const dashboardKeys = {
+  all:       ['dashboard'],
   kpis:      ['dashboard', 'kpis'],
   monthly:   ['dashboard', 'monthly'],
   breakdown: ['dashboard', 'breakdown'],
   debt:      ['dashboard', 'debt'],
 };
+
+export function refreshDashboardQueries(queryClient) {
+  return queryClient.invalidateQueries({
+    queryKey:    dashboardKeys.all,
+    refetchType: 'all',
+  });
+}
 
 export function useDashboardKpis() {
   return useQuery({

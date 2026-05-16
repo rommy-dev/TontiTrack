@@ -1,3 +1,4 @@
+import { createElement }      from 'react';
 import { Link }               from 'react-router-dom';
 import { Users, CreditCard, TrendingUp, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useDashboardKpis }   from '../../hooks/useDashboard.js';
@@ -10,7 +11,7 @@ import Spinner                from '../../components/ui/Spinner.jsx';
 import { formatCurrency }     from '../../lib/utils.js';
 
 // ── Carte KPI ─────────────────────────────────────────────────────────────────
-function KpiCard({ icon: Icon, label, value, sub, color, to }) {
+function KpiCard({ icon, label, value, sub, color, to }) {
   const palette = {
     primary: {
       icon: 'bg-primary-50 dark:bg-primary-500/10 text-primary-500',
@@ -34,7 +35,7 @@ function KpiCard({ icon: Icon, label, value, sub, color, to }) {
   const inner = (
     <div className="bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 rounded-xl shadow-card p-5 flex items-center gap-4 transition-all duration-150 hover:shadow-card-hover group">
       <div className={`p-3 rounded-xl flex-shrink-0 ${p.icon}`}>
-        <Icon size={20} />
+        {createElement(icon, { size: 20 })}
       </div>
       <div className="min-w-0">
         <p className="text-xs text-gray-400 dark:text-gray-500 font-medium truncate">{label}</p>
@@ -114,7 +115,7 @@ export default function DashboardPage() {
           label="En retard"
           value={c ? (c.countLate > 0 ? c.countLate : '0') : '—'}
           sub={c?.countLate > 0
-            ? `${formatCurrency(c.totalRemaining)} restant`
+            ? `${formatCurrency(c.totalLateRemaining)} restant`
             : 'Tout est à jour'}
           color={c?.countLate > 0 ? 'danger' : 'success'}
           to={c?.countLate > 0 ? '/contributions' : undefined}

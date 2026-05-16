@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { contributionsApi } from '../api/contributions.api.js';
-import { dashboardKeys } from './useDashboard.js';
+import { refreshDashboardQueries } from './useDashboard.js';
 import { txKeys } from './useTransactions.js';
 
 export const contributionKeys = {
@@ -34,7 +34,7 @@ export function usePayContribution(contributionId) {
   return useMutation({
     mutationFn: (amount) => contributionsApi.pay(contributionId, { amount }),
 
-    onSuccess: (res) => {
+    onSuccess: async (res) => {
       const { newStatus } = res.data.data;
 
       // Invalider toutes les queries liées — cycles, contributions, groupes, notifications, dashboard, transactions
@@ -42,10 +42,7 @@ export function usePayContribution(contributionId) {
       qc.invalidateQueries({ queryKey: ['cycles'] });
       qc.invalidateQueries({ queryKey: contributionKeys.all });
       qc.invalidateQueries({ queryKey: ['notifications'] });
-      qc.invalidateQueries({ queryKey: dashboardKeys.kpis });
-      qc.invalidateQueries({ queryKey: dashboardKeys.monthly });
-      qc.invalidateQueries({ queryKey: dashboardKeys.breakdown });
-      qc.invalidateQueries({ queryKey: dashboardKeys.debt });
+      await refreshDashboardQueries(qc);
       qc.invalidateQueries({ queryKey: txKeys.mine() });
 
       const messages = {
