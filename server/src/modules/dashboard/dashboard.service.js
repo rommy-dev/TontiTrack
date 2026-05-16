@@ -142,10 +142,42 @@ export const dashboardService = {
   // Répartition des statuts — pour le graphique camembert
   async getContributionStatusBreakdown(userId) {
     const uid = new mongoose.Types.ObjectId(userId);
+    const now = new Date();
 
     const data = await Contribution.aggregate([
       { $match: { userId: uid } },
-      { $group: { _id: '$status', count: { $sum: 1 }, total: { $sum: '$expectedAmount' } } },
+      {
+        $lookup: {
+          from:         'cycles',
+          localField:   'cycleId',
+          foreignField: '_id',
+          as:           'cycle',
+        },
+      },
+      { $unwind: '$cycle' },
+      {
+        $addFields: {
+          effectiveStatus: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ['$status', 'paid'] },
+                  { $lt: ['$paidAmount', '$expectedAmount'] },
+                  {
+                    $or: [
+                      { $eq: ['$cycle.status', 'failed'] },
+                      { $lt: ['$cycle.dueDate', now] },
+                    ],
+                  },
+                ],
+              },
+              'defaulted',
+              '$status',
+            ],
+          },
+        },
+      },
+      { $group: { _id: '$effectiveStatus', count: { $sum: 1 }, total: { $sum: '$expectedAmount' } } },
       { $sort: { count: -1 } },
     ]);
 

@@ -2,10 +2,8 @@ import { useState }        from 'react';
 import { CreditCard, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMyContributions }  from '../../hooks/useContributions.js';
 import Card               from '../../components/ui/Card.jsx';
-import Badge              from '../../components/ui/Badge.jsx';
 import { ContributionBadge } from '../../components/ui/Badge.jsx';
 import Button             from '../../components/ui/Button.jsx';
-import Spinner            from '../../components/ui/Spinner.jsx';
 import EmptyState         from '../../components/ui/EmptyState.jsx';
 import ProgressBar        from '../../components/ui/ProgressBar.jsx';
 import PaymentModal       from '../../components/features/PaymentModal.jsx';
@@ -22,18 +20,33 @@ const STATUS_FILTERS = [
   { value: 'defaulted', label: 'Impayé'      },
 ];
 
+function getEffectiveContributionStatus(contribution) {
+  const cycle = contribution.cycleId;
+  const cycleDueDate = cycle?.dueDate ? new Date(cycle.dueDate) : null;
+  const cycleEnded =
+    ['completed', 'failed'].includes(cycle?.status) ||
+    (cycleDueDate && cycleDueDate < new Date());
+
+  const isFullyPaid = contribution.paidAmount >= contribution.expectedAmount;
+
+  if (!isFullyPaid && cycleEnded) return 'defaulted';
+  return contribution.status;
+}
+
 export default function ContributionsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page,         setPage]         = useState(1);
   const [paying,       setPaying]       = useState(null); // contribution à payer
 
   const { data, isLoading } = useMyContributions({
-    status: statusFilter || undefined,
     page,
     limit: 12,
   });
 
-  const contributions = data?.contributions ?? [];
+  const contributions = (data?.contributions ?? []).filter((contribution) => {
+    if (!statusFilter) return true;
+    return getEffectiveContributionStatus(contribution) === statusFilter;
+  });
   const pagination    = data?.pagination;
 
   return (
@@ -135,12 +148,14 @@ function ContributionCard({ contribution: c, onPay }) {
   const PAYABLE_CYCLE_STATUSES        = ['active', 'pending'];
 
   const cycleStatus = c.cycleId?.status;
+  const effectiveStatus = getEffectiveContributionStatus(c);
 
-  const contributionIsPayable = PAYABLE_CONTRIBUTION_STATUSES.includes(c.status);
+  const contributionIsPayable = PAYABLE_CONTRIBUTION_STATUSES.includes(effectiveStatus);
   const cycleIsPayable        = PAYABLE_CYCLE_STATUSES.includes(cycleStatus);
 
   const canPay    = contributionIsPayable && cycleIsPayable;
   const cycleFailed = cycleStatus === 'failed'; 
+  const isDefaulted = effectiveStatus === 'defaulted';
 
   const remaining = c.expectedAmount - c.paidAmount;
   const currency  = c.groupId?.settings?.currency ?? 'XAF';
@@ -159,7 +174,7 @@ function ContributionCard({ contribution: c, onPay }) {
               : '—'}
           </p>
         </div>
-        <ContributionBadge status={c.status} />
+        <ContributionBadge status={effectiveStatus} />
       </div>
 
       {/* Montants */}
@@ -191,7 +206,7 @@ function ContributionCard({ contribution: c, onPay }) {
       )}
 
       {/* Action */}
-      {cycleFailed && contributionIsPayable && (
+      {cycleFailed && isDefaulted && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800">
           <span className="text-xs text-gray-500 dark:text-gray-400">
             <MessageCircleWarning className="w-4 h-4 inline mr-1 text-warning-500" />
@@ -204,7 +219,7 @@ function ContributionCard({ contribution: c, onPay }) {
         <Button
           size="sm"
           fullWidth
-          variant={c.status === 'late' ? 'danger' : 'primary'}
+          variant={effectiveStatus === 'late' ? 'danger' : 'primary'}
           onClick={onPay}
         >
           Payer {formatCurrency(remaining, currency)}
