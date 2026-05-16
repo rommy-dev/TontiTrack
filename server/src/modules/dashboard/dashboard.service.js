@@ -177,6 +177,20 @@ export const dashboardService = {
         },
       },
       {
+        $lookup: {
+          from:         'cycles',
+          localField:   'cycleId',
+          foreignField: '_id',
+          as:           'cycle',
+        },
+      },
+      { $unwind: '$cycle' },
+      {
+        $match: {
+          'cycle.status': { $ne: 'failed' },
+        },
+      },
+      {
         $group: {
           _id:            '$groupId',
           totalExpected:  { $sum: '$expectedAmount' },
