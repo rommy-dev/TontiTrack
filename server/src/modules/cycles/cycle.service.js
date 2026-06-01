@@ -147,12 +147,13 @@ export const cycleService = {
         status:  { $nin: ['paid'] },
       });
 
-      const newStatus = unpaidCount === 0 ? 'completed' : 'failed';
-      cycle.status = newStatus;
+      if (unpaidCount > 0) continue;
+
+      cycle.status = 'completed';
       await cycle.save();
 
       // Créer le payout si le cycle est complété
-      if (newStatus === 'completed' && cycle.beneficiaryId) {
+      if (cycle.beneficiaryId) {
         await _createPayoutTransaction(cycle);
       }
     }

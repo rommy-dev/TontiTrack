@@ -1,6 +1,6 @@
 import { useState }          from 'react';
 import { ArrowUpRight, ArrowDownLeft, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Filter, X } from 'lucide-react';
-import { useMyTransactions } from '../../hooks/useTransactions.js';
+import { useMyTransactions, useGroupTransactions } from '../../hooks/useTransactions.js';
 import Card    from '../ui/Card.jsx';
 import Skeleton from '../ui/Skeleton.jsx';
 import { formatCurrency, formatDate } from '../../lib/utils.js';
@@ -41,7 +41,7 @@ const TYPE_FILTERS = [
   { value: 'contribution', label: 'Contributions' },
   { value: 'penalty',      label: 'Pénalités' },
   { value: 'payout',       label: 'Versements' },
-  { value: 'refund',       label: 'Remboursements' },
+  // { value: 'refund',       label: 'Remboursements' },
 ];
 
 export default function TransactionHistory({ groupId, title = 'Historique des transactions' }) {
@@ -49,13 +49,18 @@ export default function TransactionHistory({ groupId, title = 'Historique des tr
   const [type,   setType]   = useState('');
   const [showMobileFilter, setShowMobileFilter] = useState(false);
 
-  // useMyTransactions si pas de groupId, sinon filtrer par groupe
-  const { data, isLoading } = useMyTransactions({
-    page,
-    limit: 10,
-    type:    type || undefined,
-    groupId: groupId || undefined,
-  });
+  // useGroupTransactions quand on est dans un groupe, sinon l'historique général
+  const { data, isLoading } = groupId
+    ? useGroupTransactions(groupId, {
+        page,
+        limit: 10,
+        type: type || undefined,
+      })
+    : useMyTransactions({
+        page,
+        limit: 10,
+        type: type || undefined,
+      });
 
   const transactions = data?.transactions ?? [];
   const pagination   = data?.pagination;
@@ -180,7 +185,8 @@ export default function TransactionHistory({ groupId, title = 'Historique des tr
           {transactions.map((tx) => {
             const cfg = TYPE_CONFIG[tx.type] ?? TYPE_CONFIG.contribution;
             const Icon = cfg.icon;
-            const isNeg = tx.amountCents < 0;
+            const displayAmount = formatCurrency(Math.abs(tx.amountCents), tx.currency);
+            const displaySign = cfg.sign || (tx.amountCents < 0 ? '-' : '+');
 
             return (
               <div
@@ -206,13 +212,13 @@ export default function TransactionHistory({ groupId, title = 'Historique des tr
                 {/* Montant + date */}
                 <div className="text-right flex-shrink-0">
                   <p className={`text-sm font-semibold ${
-                    isNeg
+                    cfg.sign === '-' || tx.type === 'penalty'
                       ? 'text-danger-600 dark:text-danger-400'
                       : tx.type === 'payout'
                         ? 'text-primary-600 dark:text-primary-400'
                         : 'text-gray-800 dark:text-gray-100'
                   }`}>
-                    {isNeg ? '−' : cfg.sign === '+' ? '+' : ''}{formatCurrency(Math.abs(tx.amountCents), tx.currency)}
+                    {displaySign}{displayAmount}
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                     {formatDate(tx.createdAt)}

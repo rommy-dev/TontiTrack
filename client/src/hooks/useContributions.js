@@ -43,7 +43,7 @@ export function usePayContribution(contributionId) {
       qc.invalidateQueries({ queryKey: contributionKeys.all });
       qc.invalidateQueries({ queryKey: ['notifications'] });
       await refreshDashboardQueries(qc);
-      qc.invalidateQueries({ queryKey: txKeys.mine() });
+      qc.invalidateQueries({ queryKey: txKeys.all });
 
       const messages = {
         paid:    'Paiement complet enregistré !',

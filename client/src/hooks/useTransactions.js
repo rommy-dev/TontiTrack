@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { transactionsApi } from '../api/transactions.api.js';
 
 export const txKeys = {
+  all:     ['transactions'],
   mine:    (p) => ['transactions', 'me', p],
   group:   (id, p) => ['transactions', 'group', id, p],
 };

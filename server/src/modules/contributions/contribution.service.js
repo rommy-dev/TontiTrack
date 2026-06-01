@@ -55,13 +55,9 @@ export const contributionService = {
     // ─── Calcul du statut et de la pénalité éventuelle ───────────────────────
     const newPaidAmount = contribution.paidAmount + amountCents;
 
-    const penalty = contribution.status === 'late'
-      ? calculatePenalty({
-          expectedAmount: contribution.expectedAmount,
-          paidAmount:     contribution.paidAmount,
-          penaltyRate:    group.settings.penaltyRate,
-        })
-      : 0;
+    const graceLimit = new Date(cycle.dueDate);
+    graceLimit.setDate(graceLimit.getDate() + group.settings.gracePeriodDays);
+    const isAfterGrace = new Date() > graceLimit;
 
     const newStatus = deriveContributionStatus({
       paidAmount:      newPaidAmount,
@@ -69,6 +65,14 @@ export const contributionService = {
       dueDate:         cycle.dueDate,
       gracePeriodDays: group.settings.gracePeriodDays,
     });
+
+    const penalty = isAfterGrace
+      ? (contribution.penaltyAmount || calculatePenalty({
+        expectedAmount: contribution.expectedAmount,
+        paidAmount:     contribution.paidAmount,
+        penaltyRate:    group.settings.penaltyRate,
+      }))
+      : 0;
 
     // ─── Session MongoDB : Contribution + Transaction en une seule opération ─
     const session = await mongoose.startSession();
@@ -101,15 +105,30 @@ export const contributionService = {
 
       // 3. Si une pénalité s'applique, créer une Transaction séparée
       if (penalty > 0) {
-        await Transaction.create([{
+        const existingPenaltyTransaction = await Transaction.findOne({
           groupId:     contribution.groupId,
           userId:      payerId,
           type:        'penalty',
-          amountCents: penalty,
-          currency:    cycle.currency,
           referenceId: contributionId,
-          description: `Pénalité de retard cycle #${cycle.cycleNumber}`,
-        }], { session });
+        }).session(session);
+
+        if (!existingPenaltyTransaction) {
+          const [penaltyTransaction] = await Transaction.create([{
+            groupId:     contribution.groupId,
+            userId:      payerId,
+            type:        'penalty',
+            amountCents: penalty,
+            currency:    cycle.currency,
+            referenceId: contributionId,
+            description: `Pénalité de retard cycle #${cycle.cycleNumber}`,
+          }], { session });
+
+          await Contribution.findByIdAndUpdate(
+            contributionId,
+            { $push: { transactionIds: penaltyTransaction._id } },
+            { session }
+          );
+        }
       }
 
       await session.commitTransaction();

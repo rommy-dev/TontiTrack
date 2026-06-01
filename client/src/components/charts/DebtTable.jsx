@@ -9,6 +9,7 @@ import { formatCurrency } from '../../lib/utils.js';
 // ── Composant d'en-tête triable ────────────────────────────────────────────────
 function SortHeader({ label, k, sortKey, sortAsc, onSort }) {
   const active = sortKey === k;
+  const directionClass = active && sortAsc ? 'rotate-180' : '';
   return (
     <button
       onClick={() => onSort(k)}
@@ -21,7 +22,7 @@ function SortHeader({ label, k, sortKey, sortAsc, onSort }) {
       {label}
       <ArrowUpDown
         size={12}
-        className={active ? 'opacity-100' : 'opacity-40'}
+        className={`${active ? 'opacity-100' : 'opacity-40'} ${directionClass}`}
       />
     </button>
   );
@@ -72,7 +73,7 @@ export default function DebtTable() {
             <div className="col-span-4">
               <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Groupe</span>
             </div>
-            <div className="col-span-3 flex justify-end">
+            <div className="col-span-2 flex justify-end">
               <SortHeader 
                 label="Restant" 
                 k="totalRemaining" 
@@ -81,10 +82,19 @@ export default function DebtTable() {
                 onSort={toggleSort} 
               />
             </div>
-            <div className="col-span-3 flex justify-end">
+            <div className="col-span-2 flex justify-end">
               <SortHeader 
                 label="Payé" 
                 k="totalPaid" 
+                sortKey={sortKey} 
+                sortAsc={sortAsc} 
+                onSort={toggleSort} 
+              />
+            </div>
+            <div className="col-span-2 flex justify-end">
+              <SortHeader 
+                label="Pénalité" 
+                k="totalPenalty" 
                 sortKey={sortKey} 
                 sortAsc={sortAsc} 
                 onSort={toggleSort} 
@@ -107,6 +117,7 @@ export default function DebtTable() {
               const percent = row.totalExpected > 0
                 ? Math.round((row.totalPaid / row.totalExpected) * 100)
                 : 0;
+              const penalty = row.totalPenalty ?? 0;
 
               return (
                 <div
@@ -130,15 +141,21 @@ export default function DebtTable() {
                     </p>
                   </div>
 
-                  <div className="col-span-3 text-right">
+                  <div className="col-span-2 text-right">
                     <p className="text-sm font-semibold text-danger-600 dark:text-danger-400">
                       {formatCurrency(row.totalRemaining, row.currency)}
                     </p>
                   </div>
 
-                  <div className="col-span-3 text-right">
+                  <div className="col-span-2 text-right">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
                       {formatCurrency(row.totalPaid, row.currency)}
+                    </p>
+                  </div>
+
+                  <div className="col-span-2 text-right">
+                    <p className={`text-sm font-semibold ${penalty > 0 ? 'text-danger-600 dark:text-danger-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {penalty > 0 ? `+ ${formatCurrency(penalty, row.currency)}` : '—'}
                     </p>
                   </div>
 

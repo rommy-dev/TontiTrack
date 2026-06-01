@@ -69,6 +69,14 @@ export default function DashboardPage() {
 
   const c = kpis?.contributions;
   const g = kpis?.groups;
+  const lateSummary = c?.countLate > 0
+    ? [
+        `${formatCurrency(c.totalLateRemaining)} restant`,
+        c.totalLatePenalty > 0
+          ? `${formatCurrency(c.totalLatePenalty)} pénalité${c.totalLatePenalty > 1 ? 's' : ''}`
+          : null,
+      ].filter(Boolean).join(' · ')
+    : 'Tout est à jour';
 
   return (
     <div className="space-y-6">
@@ -114,9 +122,7 @@ export default function DashboardPage() {
           icon={AlertTriangle}
           label="En retard"
           value={c ? (c.countLate > 0 ? c.countLate : '0') : '—'}
-          sub={c?.countLate > 0
-            ? `${formatCurrency(c.totalLateRemaining)} restant`
-            : 'Tout est à jour'}
+          sub={lateSummary}
           color={c?.countLate > 0 ? 'danger' : 'success'}
           to={c?.countLate > 0 ? '/contributions' : undefined}
         />

@@ -46,6 +46,15 @@ export const dashboardService = {
               ],
             },
           },
+          totalLatePenalty: {
+            $sum: {
+              $cond: [
+                { $eq: ['$status', 'late'] },
+                '$penaltyAmount',
+                0,
+              ],
+            },
+          },
           totalPenalty:  { $sum: '$penaltyAmount' },
         }},
       ]),
@@ -69,7 +78,7 @@ export const dashboardService = {
     const c  = contributionsData[0] ?? {
       totalExpected: 0, totalPaid: 0,
       countPending: 0, countPartial: 0, countLate: 0, countPaid: 0,
-      totalLateRemaining: 0, totalPenalty: 0,
+      totalLateRemaining: 0, totalLatePenalty: 0, totalPenalty: 0,
     };
     const tx = transactionsData[0]  ?? { totalThisMonth: 0 };
 
@@ -85,6 +94,7 @@ export const dashboardService = {
         totalPaid:      c.totalPaid,
         totalRemaining: Math.max(0, c.totalExpected - c.totalPaid),
         totalLateRemaining: c.totalLateRemaining,
+        totalLatePenalty:   c.totalLatePenalty,
         totalPenalty:   c.totalPenalty,
         countPending:   c.countPending,
         countPartial:   c.countPartial,
@@ -234,6 +244,7 @@ export const dashboardService = {
           totalRemaining: {
             $sum: { $subtract: ['$expectedAmount', '$paidAmount'] },
           },
+          totalPenalty:   { $sum: '$penaltyAmount' },
           countOpen:      { $sum: 1 },
         },
       },
@@ -254,6 +265,7 @@ export const dashboardService = {
           totalExpected:  1,
           totalPaid:      1,
           totalRemaining: 1,
+          totalPenalty:   1,
           countOpen:      1,
         },
       },

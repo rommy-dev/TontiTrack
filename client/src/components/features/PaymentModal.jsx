@@ -10,6 +10,7 @@ export default function PaymentModal({ contribution: c, onClose }) {
   const remaining = (c.expectedAmount - c.paidAmount) / 100; // en unités pour l'input
   const currency  = c.groupId?.settings?.currency ?? 'XAF';
   const allowPartial = c.groupId?.settings?.allowPartialPay ?? true;
+  const penalty = c.penaltyAmount ?? 0;
 
   const [amount, setAmount] = useState(remaining.toString());
   const [error,  setError]  = useState('');
@@ -117,7 +118,12 @@ export default function PaymentModal({ contribution: c, onClose }) {
               <p className="text-xs text-danger-600 dark:text-danger-400 leading-relaxed">
                 Ce paiement est en retard. Une pénalité de{' '}
                 <strong>{(c.groupId?.settings?.penaltyRate ?? 0.05) * 100}%</strong>{' '}
-                du montant restant s'applique automatiquement.
+                du montant restant est enregistrée automatiquement.
+                {penalty > 0 && (
+                  <>
+                    {' '}Elle est ajoutée comme charge séparée : <strong>{formatCurrency(penalty, currency)}</strong>.
+                  </>
+                )}
               </p>
             </div>
           )}
