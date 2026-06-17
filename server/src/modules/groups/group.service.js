@@ -1,5 +1,6 @@
 // src/modules/groups/group.service.js
 import { Group } from './group.model.js';
+import { Cycle } from '../cycles/cycle.model.js';
 import { notificationService } from '../notifications/notification.service.js';
 import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from '../../utils/ApiError.js';
 
@@ -243,8 +244,13 @@ export const groupService = {
     }
 
     if (newStatus === 'completed') {
-      // Archivage : vérifier qu'il n'y a pas de cycles actifs
-      // TODO: Implémenter la vérification des cycles actifs quand le module cycles sera disponible
+      const openCycles = await Cycle.countDocuments({
+        groupId,
+        status: { $in: ['pending', 'active'] },
+      });
+      if (openCycles > 0) {
+        throw new ValidationError('Clôturez tous les cycles ouverts avant de terminer le groupe');
+      }
     }
 
     const oldStatus = group.status;
