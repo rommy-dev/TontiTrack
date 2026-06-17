@@ -9,11 +9,12 @@ import { formatCurrency } from '../../lib/utils.js';
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
+  const currency = payload[0].payload.currency || 'XAF';
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl px-3 py-2.5 shadow-card text-sm">
       <p className="text-gray-400 dark:text-gray-500 text-xs mb-1">{label}</p>
       <p className="font-semibold text-gray-800 dark:text-gray-100">
-        {formatCurrency(payload[0].value)}
+        {formatCurrency(payload[0].value, currency)}
       </p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
         {payload[0].payload.count} paiement{payload[0].payload.count > 1 ? 's' : ''}

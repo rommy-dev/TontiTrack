@@ -69,11 +69,12 @@ export default function DashboardPage() {
 
   const c = kpis?.contributions;
   const g = kpis?.groups;
+  const currency = kpis?.currency || 'XAF';
   const lateSummary = c?.countLate > 0
     ? [
-        `${formatCurrency(c.totalLateRemaining)} restant`,
+        `${formatCurrency(c.totalLateRemaining, currency)} restant`,
         c.totalLatePenalty > 0
-          ? `${formatCurrency(c.totalLatePenalty)} pénalité${c.totalLatePenalty > 1 ? 's' : ''}`
+          ? `${formatCurrency(c.totalLatePenalty, currency)} pénalité${c.totalLatePenalty > 1 ? 's' : ''}`
           : null,
       ].filter(Boolean).join(' · ')
     : 'Tout est à jour';
@@ -106,7 +107,7 @@ export default function DashboardPage() {
         <KpiCard
           icon={CreditCard}
           label="Payé ce mois"
-          value={c ? formatCurrency(kpis.thisMonth.totalPaid) : '—'}
+          value={c ? formatCurrency(kpis.thisMonth.totalPaid, currency) : '—'}
           sub={`${c?.countPaid ?? 0} contribution${(c?.countPaid ?? 0) > 1 ? 's' : ''} soldées`}
           color="success"
           to="/contributions"
