@@ -2,12 +2,19 @@ import mongoose        from 'mongoose';
 import { Contribution } from '../contributions/contribution.model.js';
 import { Transaction }  from '../transactions/transaction.model.js';
 import { Group }        from '../groups/group.model.js';
-import { Cycle }        from '../cycles/cycle.model.js';
+import { convertCents } from '../../utils/currency.js';
+
+function sumConverted(rows, key, targetCurrency) {
+  return rows.reduce(
+    (sum, row) => sum + convertCents(row[key] || 0, row.currency || 'XAF', targetCurrency),
+    0
+  );
+}
 
 export const dashboardService = {
 
   // KPIs globaux du user connecté
-  async getUserKpis(userId) {
+  async getUserKpis(userId, preferredCurrency = 'XAF') {
     const uid = new mongoose.Types.ObjectId(userId);
 
     const [
@@ -26,11 +33,20 @@ export const dashboardService = {
         }},
       ]),
 
-      // Contributions : total dû, payé, en retard
+      // Contributions : total dû, payé, en retard, groupés par devise du cycle
       Contribution.aggregate([
         { $match: { userId: uid } },
+        {
+          $lookup: {
+            from: 'cycles',
+            localField: 'cycleId',
+            foreignField: '_id',
+            as: 'cycle',
+          },
+        },
+        { $unwind: '$cycle' },
         { $group: {
-          _id:          null,
+          _id:           '$cycle.currency',
           totalExpected: { $sum: '$expectedAmount' },
           totalPaid:     { $sum: '$paidAmount' },
           countPending:  { $sum: { $cond: [{ $eq: ['$status', 'pending']  }, 1, 0] } },
@@ -57,9 +73,24 @@ export const dashboardService = {
           },
           totalPenalty:  { $sum: '$penaltyAmount' },
         }},
+        {
+          $project: {
+            _id: 0,
+            currency: '$_id',
+            totalExpected: 1,
+            totalPaid: 1,
+            countPending: 1,
+            countPartial: 1,
+            countLate: 1,
+            countPaid: 1,
+            totalLateRemaining: 1,
+            totalLatePenalty: 1,
+            totalPenalty: 1,
+          },
+        },
       ]),
 
-      // Total transactions envoyées ce mois
+      // Total transactions envoyées ce mois, groupé par devise de transaction
       Transaction.aggregate([
         {
           $match: {
@@ -70,17 +101,35 @@ export const dashboardService = {
             },
           },
         },
-        { $group: { _id: null, totalThisMonth: { $sum: '$amountCents' } } },
+        { $group: { _id: '$currency', totalThisMonth: { $sum: '$amountCents' } } },
+        { $project: { _id: 0, currency: '$_id', totalThisMonth: 1 } },
       ]),
     ]);
 
     const g  = groupsData[0]        ?? { total: 0, active: 0 };
-    const c  = contributionsData[0] ?? {
-      totalExpected: 0, totalPaid: 0,
-      countPending: 0, countPartial: 0, countLate: 0, countPaid: 0,
-      totalLateRemaining: 0, totalLatePenalty: 0, totalPenalty: 0,
-    };
-    const tx = transactionsData[0]  ?? { totalThisMonth: 0 };
+    const c  = contributionsData.reduce((acc, row) => {
+      acc.totalExpected += convertCents(row.totalExpected, row.currency, preferredCurrency);
+      acc.totalPaid += convertCents(row.totalPaid, row.currency, preferredCurrency);
+      acc.totalLateRemaining += convertCents(row.totalLateRemaining, row.currency, preferredCurrency);
+      acc.totalLatePenalty += convertCents(row.totalLatePenalty, row.currency, preferredCurrency);
+      acc.totalPenalty += convertCents(row.totalPenalty, row.currency, preferredCurrency);
+      acc.countPending += row.countPending || 0;
+      acc.countPartial += row.countPartial || 0;
+      acc.countLate += row.countLate || 0;
+      acc.countPaid += row.countPaid || 0;
+      return acc;
+    }, {
+      totalExpected: 0,
+      totalPaid: 0,
+      countPending: 0,
+      countPartial: 0,
+      countLate: 0,
+      countPaid: 0,
+      totalLateRemaining: 0,
+      totalLatePenalty: 0,
+      totalPenalty: 0,
+    });
+    const totalThisMonth = sumConverted(transactionsData, 'totalThisMonth', preferredCurrency);
 
     const totalOpen      = c.countPending + c.countPartial + c.countLate;
     const completionRate = totalOpen + c.countPaid > 0
@@ -102,12 +151,13 @@ export const dashboardService = {
         countPaid:      c.countPaid,
         completionRate,
       },
-      thisMonth: { totalPaid: tx.totalThisMonth },
+      thisMonth: { totalPaid: totalThisMonth },
+      currency: preferredCurrency,
     };
   },
 
   // Collecte mensuelle sur les 6 derniers mois — pour le graphique linéaire
-  async getMonthlyCollected(userId) {
+  async getMonthlyCollected(userId, preferredCurrency = 'XAF') {
     const uid     = new mongoose.Types.ObjectId(userId);
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
@@ -127,6 +177,7 @@ export const dashboardService = {
           _id: {
             year:  { $year:  '$createdAt' },
             month: { $month: '$createdAt' },
+            currency: '$currency',
           },
           total: { $sum: '$amountCents' },
           count: { $sum: 1 },
@@ -143,7 +194,7 @@ export const dashboardService = {
       const year  = d.getFullYear();
       const month = d.getMonth() + 1;
 
-      const found = data.find(
+      const foundRows = data.filter(
         (r) => r._id.year === year && r._id.month === month
       );
 
@@ -151,8 +202,12 @@ export const dashboardService = {
         label: d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
         month,
         year,
-        total: found?.total ?? 0,
-        count: found?.count ?? 0,
+        total: foundRows.reduce(
+          (sum, row) => sum + convertCents(row.total || 0, row._id.currency || 'XAF', preferredCurrency),
+          0
+        ),
+        count: foundRows.reduce((sum, row) => sum + (row.count || 0), 0),
+        currency: preferredCurrency,
       });
     }
 
@@ -160,7 +215,7 @@ export const dashboardService = {
   },
 
   // Répartition des statuts — pour le graphique camembert
-  async getContributionStatusBreakdown(userId) {
+  async getContributionStatusBreakdown(userId, preferredCurrency = 'XAF') {
     const uid = new mongoose.Types.ObjectId(userId);
 
     const data = await Contribution.aggregate([
@@ -191,7 +246,16 @@ export const dashboardService = {
           },
         },
       },
-      { $group: { _id: '$effectiveStatus', count: { $sum: 1 }, total: { $sum: '$expectedAmount' } } },
+      {
+        $group: {
+          _id: {
+            status: '$effectiveStatus',
+            currency: '$cycle.currency',
+          },
+          count: { $sum: 1 },
+          total: { $sum: '$expectedAmount' },
+        },
+      },
       { $sort: { count: -1 } },
     ]);
 
@@ -203,16 +267,27 @@ export const dashboardService = {
       defaulted: 'Impayé',
     };
 
-    return data.map((d) => ({
-      status: d._id,
-      label:  labels[d._id] ?? d._id,
+    const grouped = data.reduce((acc, row) => {
+      const status = row._id.status;
+      if (!acc[status]) {
+        acc[status] = { status, count: 0, total: 0 };
+      }
+      acc[status].count += row.count || 0;
+      acc[status].total += convertCents(row.total || 0, row._id.currency || 'XAF', preferredCurrency);
+      return acc;
+    }, {});
+
+    return Object.values(grouped).map((d) => ({
+      status: d.status,
+      label:  labels[d.status] ?? d.status,
       count:  d.count,
       total:  d.total,
+      currency: preferredCurrency,
     }));
   },
 
   // Dette par groupe — pour le tableau de bord
-  async getDebtByGroup(userId) {
+  async getDebtByGroup(userId, preferredCurrency = 'XAF') {
     const uid = new mongoose.Types.ObjectId(userId);
 
     const data = await Contribution.aggregate([
@@ -272,6 +347,15 @@ export const dashboardService = {
       { $sort: { totalRemaining: -1 } },
     ]);
 
-    return data;
+    return data.map((row) => ({
+      groupId:        row.groupId,
+      groupName:      row.groupName,
+      currency:       preferredCurrency,
+      totalExpected:  convertCents(row.totalExpected,  row.currency || 'XAF', preferredCurrency),
+      totalPaid:      convertCents(row.totalPaid,      row.currency || 'XAF', preferredCurrency),
+      totalRemaining: convertCents(row.totalRemaining, row.currency || 'XAF', preferredCurrency),
+      totalPenalty:   convertCents(row.totalPenalty,   row.currency || 'XAF', preferredCurrency),
+      countOpen:      row.countOpen,
+    }));
   },
 };
