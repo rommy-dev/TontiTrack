@@ -17,6 +17,7 @@ import contributionRoutes from './modules/contributions/contribution.routes.js';
 import transactionRoutes  from './modules/transactions/transaction.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import notificationRoutes from './modules/notifications/notification.routes.js';
+import exportRoutes from './modules/exports/export.routes.js';
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/contributions',  contributionRoutes);
 app.use('/api/transactions',   transactionRoutes);
 app.use('/api/dashboard',      dashboardRoutes);
 app.use('/api/notifications',  notificationRoutes);
+app.use('/api/exports',        exportRoutes);
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {

@@ -24,6 +24,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
+    "exceljs": "^3.4.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.2",
     "express-validator": "^7.3.2",
@@ -33,6 +34,7 @@
     "mongoose": "^9.4.1",
     "morgan": "^1.10.1",
     "node-cron": "^4.2.1",
+    "pdfkit": "^0.18.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
