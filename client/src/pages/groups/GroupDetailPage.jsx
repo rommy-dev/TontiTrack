@@ -1,9 +1,10 @@
 // src/pages/groups/GroupDetailPage.jsx
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { UserPlus, ChevronLeft, Users, Edit, UserCog, Pause, Play, Archive } from 'lucide-react';
+import { UserPlus, ChevronLeft, Users, Edit, UserCog, Pause, Play, Archive, Settings, FileText } from 'lucide-react';
 import { useGroup, useActivateGroup, useAddMember, useUpdateGroup, useTransferAdmin, useUpdateGroupStatus } from '../../hooks/useGroups.js';
 import { useGroupCycles, useCreateCycle, useCycle } from '../../hooks/useCycles.js';
+import { useExportCyclePdf } from '../../hooks/useExports.js';
 import { useAuthStore } from '../../store/authStore.js';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -665,6 +666,7 @@ function MembersPanel({ group, isGroupAdmin }) {
 // ── Panneau cycle actif ───────────────────────────────────────────────────────
 function CyclePanel({ groupId, currency }) {
     const { data: cycles, isLoading } = useGroupCycles(groupId);
+    const { download: downloadPdf, loading: pdfLoading } = useExportCyclePdf();
 
     const activeCycle = cycles?.find((c) => c.status === 'active')
         ?? cycles?.find((c) => c.status === 'pending')
@@ -691,7 +693,18 @@ function CyclePanel({ groupId, currency }) {
         <Card>
             <Card.Header>
                 <Card.Title>Cycle #{cycle.cycleNumber}</Card.Title>
-                <CycleBadge status={cycle.status} />
+                <div className="flex items-center gap-2">
+                    <CycleBadge status={cycle.status} />
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        loading={pdfLoading}
+                        onClick={() => downloadPdf(cycle._id, groupId, `cycle-${cycle.cycleNumber}`)}
+                        leftIcon={<FileText size={14} />}
+                    >
+                        Exporter en PDF
+                    </Button>
+                </div>
             </Card.Header>
 
             <div className="grid grid-cols-2 gap-3 mb-5">
@@ -810,7 +823,7 @@ export default function GroupDetailPage() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                         {isGroupAdmin && (
                             <>
                                 <Button
