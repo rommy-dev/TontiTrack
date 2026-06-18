@@ -123,10 +123,10 @@ function ProfileInfoSection({ user, onUpdate }) {
       </Card.Header>
 
       {/* Avatar */}
-      <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex flex-col items-center gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
         <div
           onClick={handleAvatarClick}
-          className="relative w-16 h-16 rounded-2xl overflow-hidden cursor-pointer group flex items-center justify-center border border-gray-100 dark:border-gray-800 shadow-sm"
+          className="relative w-32 h-32 rounded-full overflow-hidden cursor-pointer group flex items-center justify-center border border-gray-100 dark:border-gray-800 shadow-sm"
           title="Modifier la photo de profil"
         >
           {user?.avatar ? (
@@ -225,7 +225,7 @@ function ProfileInfoSection({ user, onUpdate }) {
           </select>
         </div>
 
-        <div className="pt-1">
+        <div className="pt-1 flex justify-center items-center">
           <Button type="submit" loading={loading}>
             Sauvegarder les modifications
           </Button>
@@ -328,7 +328,7 @@ function PasswordSection() {
           error={errors.confirmPassword}
           rightIcon={eyeBtn('confirm')}
         />
-        <div className="pt-1">
+        <div className="pt-1 flex justify-center items-center">
           <Button type="submit" variant="secondary" loading={loading}>
             Changer le mot de passe
           </Button>
