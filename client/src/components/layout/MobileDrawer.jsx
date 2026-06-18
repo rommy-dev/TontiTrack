@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import {
     LayoutDashboard, Users, CreditCard, User,
     LogOut, TrendingUp, X,
@@ -7,6 +8,7 @@ import { cn } from '../../lib/utils.js';
 import { useAuthStore } from '../../store/authStore.js';
 import api from '../../api/axios.js';
 import toast from 'react-hot-toast';
+import Modal from '../ui/Modal.jsx';
 
 const NAV_ITEMS = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
@@ -19,15 +21,25 @@ export default function MobileDrawer({ isOpen, onClose }) {
     const navigate = useNavigate();
     const clearAuth = useAuthStore((s) => s.clearAuth);
     const user = useAuthStore((s) => s.user);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-    async function handleLogout() {
+    function handleLogoutClick() {
+        setShowLogoutModal(true);
+    }
+
+    async function confirmLogout() {
         try {
             await api.post('/auth/logout');
         } catch { /* silencieux — on déconnecte quand même */ }
         clearAuth();
         toast.success('Déconnecté');
         navigate('/login');
+        setShowLogoutModal(false);
         onClose();
+    }
+
+    function cancelLogout() {
+        setShowLogoutModal(false);
     }
 
     function handleNavLinkClick() {
@@ -131,7 +143,7 @@ export default function MobileDrawer({ isOpen, onClose }) {
                     </NavLink>
 
                     <button
-                        onClick={handleLogout}
+                        onClick={handleLogoutClick}
                         className="w-full flex items-center rounded-lg px-3 py-2 text-sm gap-3 text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-500/10 transition-colors duration-150"
                     >
                         <LogOut size={16} className="flex-shrink-0" />
@@ -139,6 +151,48 @@ export default function MobileDrawer({ isOpen, onClose }) {
                     </button>
                 </div>
             </aside>
+
+            {/* Modal de confirmation de déconnexion */}
+            <Modal
+                isOpen={showLogoutModal}
+                onClose={cancelLogout}
+                title="Confirmation de déconnexion"
+                size="sm"
+                closeOnBackdropClick={true}
+                closeOnEscape={true}
+            >
+                <Modal.Body>
+                    <Modal.Description>
+                        Êtes-vous sûr de vouloir vous déconnecter ?
+                    </Modal.Description>
+                </Modal.Body>
+                <Modal.Footer>
+                    <button
+                        onClick={cancelLogout}
+                        className={cn(
+                            'px-4 py-2 text-sm font-medium rounded-lg',
+                            'text-gray-600 dark:text-gray-400',
+                            'bg-gray-100 dark:bg-gray-700',
+                            'hover:bg-gray-200 dark:hover:bg-gray-600',
+                            'transition-colors duration-150'
+                        )}
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        onClick={confirmLogout}
+                        className={cn(
+                            'px-4 py-2 text-sm font-medium rounded-lg',
+                            'text-white',
+                            'bg-primary-500',
+                            'hover:bg-primary-600',
+                            'transition-colors duration-150'
+                        )}
+                    >
+                        Se déconnecter
+                    </button>
+                </Modal.Footer>
+            </Modal>
         </>
     );
 }
