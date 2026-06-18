@@ -56,12 +56,23 @@ export default function Topbar({ sidebarCollapsed, onMobileMenuToggle }) {
         </div>
 
         {/* Avatar */}
-        <button className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center hover:bg-primary-400/30 border-2 border-transparent hover:border-success-500 dark:hover:bg-primary-500/30 transition-all duration-150"
-             onClick={() => navigate('/profile')}
+        <button
+          className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center hover:opacity-90 border border-gray-200 dark:border-gray-800 transition-all duration-150"
+          onClick={() => navigate('/profile')}
         >
-          <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
-            {user?.firstName?.[0]}{user?.lastName?.[0]}
-          </span>
+          {user?.avatar ? (
+            <img
+              src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/${user.avatar}`}
+              alt="Avatar"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
+              <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              </span>
+            </div>
+          )}
         </button>
       </div>
     </header>

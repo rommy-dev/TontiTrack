@@ -15,7 +15,7 @@ export const userService = {
   async updateProfile(userId, updates) {
     // Champs autorisés explicitement — whitelist stricte
     // On n'accepte jamais passwordHash, status, ou refreshTokens via cette route
-    const allowed = ['firstName', 'lastName', 'phone', 'preferredCurrency'];
+    const allowed = ['firstName', 'lastName', 'phone', 'preferredCurrency', 'avatar'];
     const sanitized = {};
 
     for (const key of allowed) {
@@ -103,5 +103,27 @@ export const userService = {
 
     if (!user) throw new NotFoundError('Utilisateur');
     return user;
+  },
+
+  // Mettre à jour la photo de profil (avatar) et supprimer l'ancien fichier
+  async updateAvatar(userId, filename) {
+    const user = await User.findById(userId);
+    if (!user) throw new NotFoundError('Utilisateur');
+
+    const oldAvatar = user.avatar;
+    user.avatar = filename;
+    await user.save();
+
+    // Supprimer l'ancien avatar s'il existe pour économiser de l'espace disque
+    if (oldAvatar) {
+      const fs = await import('fs');
+      const path = await import('path');
+      const oldPath = path.join('uploads', oldAvatar);
+      fs.promises.unlink(oldPath).catch((err) => {
+        console.error(`Impossible de supprimer l'ancien avatar (${oldAvatar}) :`, err.message);
+      });
+    }
+
+    return user.toPublicJSON();
   },
 };

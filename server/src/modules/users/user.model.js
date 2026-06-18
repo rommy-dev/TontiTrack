@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
   preferredCurrency: { type: String, default: 'XAF' },
   status:            { type: String, enum: ['active', 'inactive', 'banned'], default: 'active' },
   refreshTokens:     [{ type: String, select: false }],
+  avatar:            { type: String, default: null },
 }, { timestamps: true });
 
 // Virtuel : calculé, jamais stocké en base
@@ -32,6 +33,7 @@ userSchema.methods.toPublicJSON = function () {
     phone:             this.phone,
     preferredCurrency: this.preferredCurrency,
     status:            this.status,
+    avatar:            this.avatar,
     createdAt:         this.createdAt,
   };
 };

@@ -1,5 +1,6 @@
 import { userService } from './user.service.js';
 import { catchAsync }  from '../../utils/catchAsync.js';
+import { ValidationError } from '../../utils/ApiError.js';
 
 export const userController = {
 
@@ -47,6 +48,15 @@ export const userController = {
   // Utilisé par le frontend pour chercher un utilisateur avant de l'ajouter à un groupe
   searchByEmail: catchAsync(async (req, res) => {
     const user = await userService.findByEmail(req.query.email);
+    res.json({ status: 'success', data: { user } });
+  }),
+
+  // PATCH /api/users/me/avatar
+  uploadAvatar: catchAsync(async (req, res) => {
+    if (!req.file) {
+      throw new ValidationError('Aucune image fournie');
+    }
+    const user = await userService.updateAvatar(req.user._id, req.file.filename);
     res.json({ status: 'success', data: { user } });
   }),
 };

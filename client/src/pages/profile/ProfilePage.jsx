@@ -1,6 +1,6 @@
 // src/pages/profile/ProfilePage.jsx
-import { useState }      from 'react';
-import { User, Lock, Globe, Eye, EyeOff } from 'lucide-react';
+import { useState, useRef }      from 'react';
+import { User, Lock, Globe, Eye, EyeOff, Camera, Loader2 } from 'lucide-react';
 import { useAuthStore }  from '../../store/authStore.js';
 import { authApi }       from '../../api/auth.api.js';
 import Card   from '../../components/ui/Card.jsx';
@@ -18,6 +18,9 @@ const CURRENCIES = [
 
 // ── Section infos personnelles ────────────────────────────────────────────────
 function ProfileInfoSection({ user, onUpdate }) {
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  
   const [form,    setForm]    = useState({
     firstName:         user?.firstName         ?? '',
     lastName:          user?.lastName          ?? '',
@@ -25,6 +28,39 @@ function ProfileInfoSection({ user, onUpdate }) {
     preferredCurrency: user?.preferredCurrency ?? 'XAF',
   });
   const [loading, setLoading] = useState(false);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Le fichier doit être une image');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("L'image ne doit pas dépasser 2 Mo");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    setUploading(true);
+    try {
+      const { data } = await authApi.uploadAvatar(formData);
+      onUpdate(data.data.user);
+      toast.success('Photo de profil mise à jour');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Erreur lors de l\'upload');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Formater le numéro de téléphone avec espaces
   const formatPhoneNumber = (value) => {
@@ -88,11 +124,51 @@ function ProfileInfoSection({ user, onUpdate }) {
 
       {/* Avatar */}
       <div className="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
-        <div className="w-16 h-16 rounded-2xl bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
-          <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
-            {user?.firstName?.[0]}{user?.lastName?.[0]}
-          </span>
+        <div
+          onClick={handleAvatarClick}
+          className="relative w-16 h-16 rounded-2xl overflow-hidden cursor-pointer group flex items-center justify-center border border-gray-100 dark:border-gray-800 shadow-sm"
+          title="Modifier la photo de profil"
+        >
+          {user?.avatar ? (
+            <img
+              src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/${user.avatar}`}
+              alt="Avatar"
+              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center transition-colors group-hover:bg-primary-200 dark:group-hover:bg-primary-500/30">
+              <span className="text-xl font-bold text-primary-600 dark:text-primary-400">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
+              </span>
+            </div>
+          )}
+
+          {/* Overlay au survol */}
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            {uploading ? (
+              <Loader2 className="w-5 h-5 text-white animate-spin" />
+            ) : (
+              <Camera className="w-5 h-5 text-white" />
+            )}
+          </div>
+
+          {/* État de chargement si pas en survol */}
+          {uploading && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-white animate-spin" />
+            </div>
+          )}
         </div>
+
+        {/* Input file caché */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          className="hidden"
+        />
+
         <div>
           <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             {user?.firstName} {user?.lastName}

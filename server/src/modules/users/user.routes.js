@@ -2,6 +2,7 @@ import { Router }        from 'express';
 import { userController } from './user.controller.js';
 import { protect }        from '../../middleware/auth.js';
 import { validateBody }   from '../../middleware/validate.js';
+import { upload }         from '../../middleware/upload.js';
 import { z }              from 'zod';
 
 const router = Router();
@@ -44,6 +45,7 @@ router.use(protect);
 // Profil du user connecté
 router.get('/me',                                                 userController.getMe);
 router.patch('/me', validateBody(updateProfileSchema),            userController.updateMe);
+router.patch('/me/avatar', upload.single('avatar'),               userController.uploadAvatar);
 router.patch('/me/email',    validateBody(updateEmailSchema),     userController.updateEmail);
 router.patch('/me/password', validateBody(updatePasswordSchema),  userController.updatePassword);
 router.delete('/me',         validateBody(deleteAccountSchema),   userController.deleteMe);

@@ -8,4 +8,7 @@ export const authApi = {
   getMe:    ()     => api.get('/users/me'),
   updateMe: (data) => api.patch('/users/me', data),
   updatePassword: (data) => api.patch('/users/me/password', data),
+  uploadAvatar: (formData) => api.patch('/users/me/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 };

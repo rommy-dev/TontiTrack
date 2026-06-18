@@ -105,10 +105,20 @@ export default function MobileDrawer({ isOpen, onClose }) {
                         to="/profile"
                         onClick={handleNavLinkClick}
                         className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 hover:dark:bg-gray-800 transition-all duration-150">
-                        <div className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
-                                {user.firstName?.[0]}{user.lastName?.[0]}
-                            </span>
+                        <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 border border-gray-200 dark:border-gray-800">
+                            {user.avatar ? (
+                                <img
+                                    src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/${user.avatar}`}
+                                    alt="Avatar"
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
+                                    <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
+                                        {user.firstName?.[0]}{user.lastName?.[0]}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
