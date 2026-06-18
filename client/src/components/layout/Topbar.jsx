@@ -1,4 +1,4 @@
-import { useLocation }       from 'react-router-dom';
+import { useLocation, useNavigate }       from 'react-router-dom';
 import { Menu }                from 'lucide-react';
 import { useAuthStore }        from '../../store/authStore.js';
 import NotificationBell        from '../notifications/NotificationBell.jsx';
@@ -14,6 +14,7 @@ const PAGE_TITLES = {
 
 export default function Topbar({ sidebarCollapsed, onMobileMenuToggle }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const user     = useAuthStore((s) => s.user);
 
   // Titre dynamique selon la route active
@@ -55,11 +56,13 @@ export default function Topbar({ sidebarCollapsed, onMobileMenuToggle }) {
         </div>
 
         {/* Avatar */}
-        <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center">
+        <button className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center hover:bg-primary-400/30 border-2 border-transparent hover:border-success-500 dark:hover:bg-primary-500/30 transition-all duration-150"
+             onClick={() => navigate('/profile')}
+        >
           <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
             {user?.firstName?.[0]}{user?.lastName?.[0]}
           </span>
-        </div>
+        </button>
       </div>
     </header>
   );

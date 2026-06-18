@@ -101,7 +101,10 @@ export default function MobileDrawer({ isOpen, onClose }) {
 
                 {/* ── Bas de drawer : user + logout ── */}
                 <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-2">
-                    <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <NavLink 
+                        to="/profile"
+                        onClick={handleNavLinkClick}
+                        className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 hover:dark:bg-gray-800 transition-all duration-150">
                         <div className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center flex-shrink-0">
                             <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
                                 {user.firstName?.[0]}{user.lastName?.[0]}
@@ -115,7 +118,7 @@ export default function MobileDrawer({ isOpen, onClose }) {
                                 {user.email}
                             </p>
                         </div>
-                    </div>
+                    </NavLink>
 
                     <button
                         onClick={handleLogout}

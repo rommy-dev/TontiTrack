@@ -113,14 +113,16 @@ export default function Sidebar({ collapsed, onToggle, className }) {
 
             {/* ── Bas de sidebar : user + theme + logout ── */}
             <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-2">
-                <div className="flex items-center justify-center gap-2.5 px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800">
+                <button className="flex items-center justify-center gap-2.5 w-full px-2 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 transition-all duration-150"
+                    onClick={() => navigate('/profile')}
+                >
                     <div className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-500/20 flex items-center justify-center flex-shrink-0">
                         <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
                             {user.firstName?.[0]}{user.lastName?.[0]}
                         </span>
                     </div>
                     {!collapsed && (
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 text-left">
                         <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
                             {user.firstName} {user.lastName}
                         </p>
@@ -129,7 +131,7 @@ export default function Sidebar({ collapsed, onToggle, className }) {
                         </p>
                     </div>
                     )}
-                </div>
+                </button>
 
 
                 <button
