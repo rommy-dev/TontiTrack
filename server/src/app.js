@@ -22,7 +22,9 @@ import exportRoutes from './modules/exports/export.routes.js';
 const app = express();
 
 // ── Sécurité ────────────────────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors({
   origin: process.env.NODE_ENV === 'development' ? true : (process.env.CLIENT_URL || 'http://localhost:5173'),
   credentials: true,
@@ -38,6 +40,9 @@ app.use(cookieParser());    // pour lire req.cookies.refreshToken
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+
+// ── Fichiers statiques (Avatars, etc.) ───────────────────────────────────────
+app.use('/uploads', express.static('uploads'));
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRateLimiter, authRoutes);
