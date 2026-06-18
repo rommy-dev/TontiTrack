@@ -1,10 +1,10 @@
 // src/pages/groups/GroupDetailPage.jsx
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { UserPlus, ChevronLeft, Users, Edit, UserCog, Pause, Play, Archive, Settings, FileText } from 'lucide-react';
+import { UserPlus, ChevronLeft, Users, Edit, UserCog, Pause, Play, Archive, Settings, FileText, Download, ChevronDown, FileSpreadsheet } from 'lucide-react';
 import { useGroup, useActivateGroup, useAddMember, useUpdateGroup, useTransferAdmin, useUpdateGroupStatus } from '../../hooks/useGroups.js';
 import { useGroupCycles, useCreateCycle, useCycle } from '../../hooks/useCycles.js';
-import { useExportCyclePdf } from '../../hooks/useExports.js';
+import { useExportCyclePdf, useExportGroupExcel } from '../../hooks/useExports.js';
 import { useAuthStore } from '../../store/authStore.js';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -667,6 +667,8 @@ function MembersPanel({ group, isGroupAdmin }) {
 function CyclePanel({ groupId, currency }) {
     const { data: cycles, isLoading } = useGroupCycles(groupId);
     const { download: downloadPdf, loading: pdfLoading } = useExportCyclePdf();
+    const { download: downloadExcel, loading: excelLoading } = useExportGroupExcel();
+    const [exportOpen, setExportOpen] = useState(false);
 
     const activeCycle = cycles?.find((c) => c.status === 'active')
         ?? cycles?.find((c) => c.status === 'pending')
@@ -695,15 +697,50 @@ function CyclePanel({ groupId, currency }) {
                 <Card.Title>Cycle #{cycle.cycleNumber}</Card.Title>
                 <div className="flex items-center gap-2">
                     <CycleBadge status={cycle.status} />
-                    <Button
-                        size="sm"
-                        variant="ghost"
-                        loading={pdfLoading}
-                        onClick={() => downloadPdf(cycle._id, groupId, `cycle-${cycle.cycleNumber}`)}
-                        leftIcon={<FileText size={14} />}
-                    >
-                        Exporter en PDF
-                    </Button>
+                    <div className="relative inline-block text-left">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            loading={pdfLoading || excelLoading}
+                            onClick={() => setExportOpen(!exportOpen)}
+                            leftIcon={<Download size={14} />}
+                            rightIcon={<ChevronDown size={14} className={`transform transition-transform ${exportOpen ? 'rotate-180' : ''}`} />}
+                        >
+                            Exporter
+                        </Button>
+                        {exportOpen && (
+                            <>
+                                <div 
+                                    className="fixed inset-0 z-10" 
+                                    onClick={() => setExportOpen(false)} 
+                                />
+                                <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-lg py-1 z-20 animate-in fade-in slide-in-from-top-1 duration-100">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setExportOpen(false);
+                                            downloadPdf(cycle._id, groupId, `cycle-${cycle.cycleNumber}`);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-left transition-colors"
+                                    >
+                                        <FileText size={14} className="text-red-400" />
+                                        <span>Exporter en PDF</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setExportOpen(false);
+                                            downloadExcel(groupId);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 text-left transition-colors"
+                                    >
+                                        <FileSpreadsheet size={14} className="text-green-400" />
+                                        <span>Exporter en Excel</span>
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </Card.Header>
 
