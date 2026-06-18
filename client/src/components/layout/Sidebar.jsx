@@ -191,8 +191,8 @@ export default function Sidebar({ collapsed, onToggle, className }) {
                         className={cn(
                             'px-4 py-2 text-sm font-medium rounded-lg',
                             'text-white',
-                            'bg-danger-500',
-                            'hover:bg-danger-600',
+                            'bg-primary-500',
+                            'hover:bg-primary-600',
                             'transition-colors duration-150'
                         )}
                     >
