@@ -3,56 +3,32 @@
 version: '3.9'
 
 services:
-
-  mongo:
-    image: mongo:7.0
-    container_name: tontitrack-mongo-prod
-    restart: always
-    # En prod, MongoDB n'est PAS exposé sur l'hôte — seulement accessible en interne
-    expose:
-      - "27017"
-    volumes:
-      - mongo-data-prod:/data/db
-      # Script d'init pour créer un user MongoDB dédié
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/init.js:ro
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE:      tontitrack
-    networks:
-      - tontitrack-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   server:
     image: ghcr.io/${GITHUB_USERNAME}/tontitrack-server:latest
-    container_name: tontitrack-server-prod
+
     restart: always
+
     expose:
-      - "5000"
+    - "5000"
+
     environment:
-      NODE_ENV: production
-      PORT: 5000
-      MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/tontitrack?authSource=tontitrack
-      JWT_ACCESS_SECRET:   ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET:  ${JWT_REFRESH_SECRET}
-      JWT_ACCESS_EXPIRES:  15m
-      JWT_REFRESH_EXPIRES: 7d
-      BCRYPT_ROUNDS: 12
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+
+      MONGODB_URI: ${MONGODB_URI}
+
       CLIENT_URL: ${CLIENT_URL}
-    depends_on:
-      mongo:
-        condition: service_healthy
-    networks:
-      - tontitrack-network
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES}
+      JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES}
+
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS}
+
+      API_RATE_LIMIT: ${API_RATE_LIMIT}
+      AUTH_RATE_LIMIT: ${AUTH_RATE_LIMIT}
 
   client:
     image: ghcr.io/${GITHUB_USERNAME}/tontitrack-client:latest
