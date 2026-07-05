@@ -36,6 +36,10 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copier le code source
 COPY --chown=nodeuser:nodejs . .
 
+# Créer le dossier writable
+RUN mkdir -p /app/uploads && \
+    chown -R nodeuser:nodejs /app/uploads
+    
 # Passer au user non-root
 USER nodeuser
 
