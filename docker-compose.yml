@@ -1,85 +1,53 @@
-# docker-compose.yml — développement
 version: '3.9'
 
 services:
 
-  # MongoDB (Atlas en dev — container local commenté)
-  #
-  # Pour passer en MongoDB local, décommenter ce bloc et changer MONGODB_URI_DEV
-  # dans server/.env vers mongodb://mongo:27017/tontitrack_dev
-  #
-  # mongo:
-  #   image: mongo:7.0
-  #   container_name: tontitrack-mongo
-  #   restart: unless-stopped
-  #   ports:
-  #     - "27017:27017"
-  #   volumes:
-  #     - mongo-data:/data/db
-  #   environment:
-  #     MONGO_INITDB_DATABASE: tontitrack
-  #   networks:
-  #     - tontitrack-network
-  #   healthcheck:
-  #     test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-
-  # Backend
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile
-      # deps-dev = node_modules complets (prod + dev) — nodemon disponible
-      # Le code source est monté via volume ci-dessous → hot reload actif
-      target: deps-dev
+      dockerfile: Dockerfile.dev
+
     container_name: tontitrack-server
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
     restart: unless-stopped
+
     ports:
       - "5000:5000"
+
     volumes:
-      # Hot reload : le code source local écrase le contenu du container
-      - ./server/src:/app/src:ro
+      - ./server/src:/app/src
       - ./server/uploads:/app/uploads
+
     env_file:
       - ./server/.env
+
     environment:
-      # Override explicite : force le mode dev même si server/.env dit autre chose
       NODE_ENV: development
       PORT: 5000
 
-    # Nodemon pour hot reload (CMD défini dans le stage deps-dev du Dockerfile)
-    command: ["npx", "nodemon", "--legacy-watch", "src/server.js"]
-    # depends_on:
-    #   mongo:
-    #     condition: service_healthy
     networks:
       - tontitrack-network
 
-  # Frontend
+
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
       target: runner
       args:
-        VITE_API_URL: http://localhost:5000/api
+        VITE_API_URL: ${VITE_API_URL}
+
     container_name: tontitrack-client
     restart: unless-stopped
+
     ports:
       - "3000:80"
+
     depends_on:
       - server
+
     networks:
       - tontitrack-network
 
-# volumes:
-#   mongo-data:
-#     driver: local
 
 networks:
   tontitrack-network:
