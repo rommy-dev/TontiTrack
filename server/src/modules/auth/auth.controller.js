@@ -13,7 +13,7 @@ export const authController = {
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure:   config.isProduction,
-      sameSite: 'strict',
+      sameSite: config.isProduction ? 'none' : 'lax',
       maxAge:   7 * 24 * 60 * 60 * 1000,   // 7 jours en ms
     });
 
@@ -30,7 +30,7 @@ export const authController = {
     res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure:   config.isProduction,
-      sameSite: 'strict',
+      sameSite: config.isProduction ? 'none' : 'lax',
       maxAge:   7 * 24 * 60 * 60 * 1000,
     });
 
@@ -48,7 +48,7 @@ export const authController = {
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true, secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.json({ status: 'success', data: { accessToken } });
@@ -59,7 +59,11 @@ export const authController = {
     if (refreshToken && req.user) {
       await authService.logout(req.user.id, refreshToken);
     }
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: config.isProduction,
+      sameSite: config.isProduction ? 'none' : 'lax',
+    });
     res.json({ status: 'success', message: 'Déconnecté' });
   }),
 };

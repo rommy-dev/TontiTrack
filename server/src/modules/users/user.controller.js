@@ -33,14 +33,22 @@ export const userController = {
       newPassword:     req.body.newPassword,
     });
     // Effacer le cookie refreshToken — l'utilisateur doit se reconnecter
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    });
     res.json({ status: 'success', data: result });
   }),
 
   // DELETE /api/users/me
   deleteMe: catchAsync(async (req, res) => {
     await userService.deactivateAccount(req.user._id, { password: req.body.password });
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    });
     res.json({ status: 'success', data: null });
   }),
 
