@@ -1,5 +1,5 @@
 # ── Étape 1 : Installation des dépendances de production ───────────────────
-FROM node:20-alpine AS deps
+FROM node:20-slim AS deps
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # ── Étape 1b : Dépendances complètes (dev + prod) pour le développement ─────
-FROM node:20-alpine AS deps-dev
+FROM node:20-slim AS deps-dev
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN npm ci
 CMD ["npx", "nodemon", "src/server.js"]
 
 # Image de production
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 
 # Métadonnées
 LABEL maintainer="TontiTrack"
