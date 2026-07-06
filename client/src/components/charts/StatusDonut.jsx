@@ -79,7 +79,7 @@ export default function StatusDonut() {
         </div>
       ) : (
         <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="99%" height="100%">
             <PieChart>
               <Pie
                 data={chartData}
