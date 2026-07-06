@@ -22,13 +22,18 @@ import exportRoutes from './modules/exports/export.routes.js';
 const app = express();
 
 // ── Sécurité ────────────────────────────────────────────────────────────────
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
-}));
-app.use(cors({
-  origin: process.env.NODE_ENV === 'development' ? true : (process.env.CLIENT_URL || 'http://localhost:5173'),
-  credentials: true,
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: false,
+  })
+);
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  })
+);
 app.use(apiRateLimiter);   // limite globale sur tout l'API
 
 // ── Parsing ──────────────────────────────────────────────────────────────────
@@ -42,7 +47,12 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // ── Fichiers statiques (Avatars, etc.) ───────────────────────────────────────
-app.use('/uploads', express.static('uploads'));
+app.use("/uploads", express.static("uploads", {
+  setHeaders: (res) => {
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
+    res.set("Access-Control-Allow-Origin", process.env.CLIENT_URL);
+  }
+}));
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRateLimiter, authRoutes);
