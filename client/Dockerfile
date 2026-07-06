@@ -8,7 +8,9 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_API_URL
+# Use a placeholder as default so the built assets can be patched at container runtime
+# by the entrypoint script with the actual `VITE_API_URL` provided by Render.
+ARG VITE_API_URL=%%VITE_API_URL%%
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
@@ -24,8 +26,12 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Config Nginx custom
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Supprimer la config Nginx par défaut
-RUN rm -f /etc/nginx/conf.d/default.conf.default
+# Supprimer la config Nginx par défaut si présent
+RUN rm -f /etc/nginx/conf.d/default.conf.default || true
+
+# Entrypoint script will replace placeholders in built assets with runtime env vars
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 80
 
@@ -33,4 +39,4 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=5s \
   CMD wget -qO- http://localhost:80 || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]
