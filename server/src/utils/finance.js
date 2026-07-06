@@ -28,12 +28,14 @@ export function calculatePenalty({ expectedAmount, paidAmount, penaltyRate }) {
  * Source de vérité : les Transactions, pas les Contributions.
  */
 export function calculateGroupBalance(transactions) {
-  return transactions.reduce((acc, tx) => {
+  const summary = transactions.reduce((acc, tx) => {
     acc.totalIn  += tx.amountCents > 0 ? tx.amountCents : 0;
     acc.totalOut += tx.amountCents < 0 ? Math.abs(tx.amountCents) : 0;
     return acc;
   }, { totalIn: 0, totalOut: 0, balance: 0 });
-  // Note : balance = totalIn - totalOut — à calculer après le reduce
+
+  summary.balance = summary.totalIn - summary.totalOut;
+  return summary;
 }
 
 /**

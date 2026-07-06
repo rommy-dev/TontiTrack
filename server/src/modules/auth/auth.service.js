@@ -1,17 +1,21 @@
 import jwt    from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 import { User }   from '../users/user.model.js';
 import { config } from '../../config/env.js';
 import { AuthError, ConflictError } from '../../utils/ApiError.js';
 
 const generateTokens = (userId) => {
+  const accessJti = randomUUID();
+  const refreshJti = randomUUID();
+
   const accessToken = jwt.sign(
-    { sub: userId.toString(), type: 'access' },
+    { sub: userId.toString(), type: 'access', jti: accessJti },
     config.jwtAccessSecret,
     { expiresIn: config.jwtAccessExpires }
   );
   const refreshToken = jwt.sign(
-    { sub: userId.toString(), type: 'refresh' },
+    { sub: userId.toString(), type: 'refresh', jti: refreshJti },
     config.jwtRefreshSecret,
     { expiresIn: config.jwtRefreshExpires }
   );

@@ -8,8 +8,11 @@ let mongoServer;
 beforeAll(async () => {
   // Configuration pour éviter les warnings de dépréciation
   mongoose.set('strictQuery', false);
-  
-  mongoServer = await MongoMemoryServer.create();
+
+  mongoServer = await MongoMemoryServer.create({
+    instance: { dbName: 'tontitrack-test' },
+    replSet: { count: 1 },
+  });
   await mongoose.connect(mongoServer.getUri());
 });
 
