@@ -1,6 +1,7 @@
 import {
   deriveContributionStatus,
   calculatePenalty,
+  calculateGroupBalance,
   formatCurrency,
 } from '../../src/utils/finance.js';
 
@@ -49,5 +50,21 @@ describe('calculatePenalty', () => {
   it('retourne un entier (centimes)', () => {
     const result = calculatePenalty({ expectedAmount: 10000, paidAmount: 6001, penaltyRate: 0.05 });
     expect(Number.isInteger(result)).toBe(true); // Math.floor garantit l'entier
+  });
+});
+
+describe('calculateGroupBalance', () => {
+  it('calcule correctement le solde à partir des transactions', () => {
+    const transactions = [
+      { amountCents: 5000 },
+      { amountCents: -2000 },
+      { amountCents: 1500 },
+    ];
+
+    expect(calculateGroupBalance(transactions)).toEqual({
+      totalIn: 6500,
+      totalOut: 2000,
+      balance: 4500,
+    });
   });
 });
