@@ -1,0 +1,21 @@
+# ── Base image ─────────────────────────────────────────────
+FROM node:20-slim
+
+WORKDIR /app
+
+# Installer toutes les dépendances (dev + prod)
+COPY package*.json ./
+RUN npm install
+
+# Copier le code source
+COPY . .
+
+# Dossier uploads
+RUN mkdir -p /app/uploads
+
+EXPOSE 5000
+
+ENV NODE_ENV=development
+
+# Dev server avec hot reload
+CMD ["npx", "nodemon", "src/server.js"]
