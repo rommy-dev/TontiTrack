@@ -28,9 +28,12 @@ app.use(
     crossOriginOpenerPolicy: false,
   })
 );
+
+// CORS: allow the configured client URL in production, but keep a safe fallback
+// so the app doesn't break when the env var is missing (e.g. during some build/deploys).
 app.use(
   cors({
-    origin: process.env.NODE_ENV === 'development' ? true : process.env.CLIENT_URL,
+    origin: process.env.NODE_ENV === 'development' ? true : (process.env.CLIENT_URL || 'http://localhost:5173'),
     credentials: true,
   })
 );
@@ -49,8 +52,10 @@ if (process.env.NODE_ENV === 'development') {
 // ── Fichiers statiques (Avatars, etc.) ───────────────────────────────────────
 app.use("/uploads", express.static("uploads", {
   setHeaders: (res) => {
+    // Allow cross-origin access to uploaded images. If CLIENT_URL is not set,
+    // fall back to permissive `*` so images still load in the browser.
     res.set("Cross-Origin-Resource-Policy", "cross-origin");
-    res.set("Access-Control-Allow-Origin", process.env.CLIENT_URL);
+    res.set("Access-Control-Allow-Origin", process.env.CLIENT_URL || '*');
   }
 }));
 
