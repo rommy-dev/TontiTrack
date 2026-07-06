@@ -25,7 +25,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --chown=node:node . .
 
 # Dossier writable (logs / uploads)
-RUN mkdir -p /app/uploads
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
 
 # Sécurité : user non-root officiel Node
 USER node
