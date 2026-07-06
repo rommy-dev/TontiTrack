@@ -35,6 +35,9 @@ services:
       # Le code source est monté via volume ci-dessous → hot reload actif
       target: deps-dev
     container_name: tontitrack-server
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     restart: unless-stopped
     ports:
       - "5000:5000"
