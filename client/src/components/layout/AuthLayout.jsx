@@ -39,9 +39,9 @@ export default function AuthLayout() {
                     {/* Stats sociales */}
                     <div className="flex items-center gap-8 pt-4">
                         {[
-                            { value: "2 000+", label: "groupes actifs" },
-                            { value: "98%", label: "paiements traités" },
-                            { value: "0 XAF", label: "de frais cachés" },
+                            { value: "Multi-utilisateur", label: "gestion collaborative" },
+                            { value: "Historique complet", label: "transactions" },
+                            { value: "Exports PDF", label: "et Excel" },
                         ].map(({ value, label }) => (
                             <div key={label}>
                                 <div className="text-2xl font-bold text-white">{value}</div>
